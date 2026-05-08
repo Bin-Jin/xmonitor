@@ -189,7 +189,9 @@
         async function fetchPrices() {
             const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
             try {
-                const res = await fetch(`${baseUrl}/prices`);
+                const res = await fetch(`${baseUrl}/prices`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
                 const result = await res.json();
                 if (result.status === 'success') {
                     document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-success animate-ping-slow";
@@ -205,7 +207,10 @@
 
         // 👉 新增核心功能：将网页当前的预警列表打包发送给 Python 后端
         async function syncAlertsToBackend() {
-            if (!isRunning) return; // 还没连接时不发送
+            if (!isRunning) {
+                alert("⚠️ 请先点击右上角的【连接】按钮建立链路，再添加预警！");
+                return; 
+            }
             const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
             
             // 组装成后端 Python 能理解的格式: [{"name": "xxx", "target_price": 100}]
@@ -215,13 +220,23 @@
             }));
 
             try {
-                await fetch(`${baseUrl}/update_alerts`, {
+                const res = await fetch(`${baseUrl}/update_alerts`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true' // 突破拦截
+                    },
                     body: JSON.stringify(payload)
                 });
+                
+                if(res.ok) {
+                    console.log("✅ 预警任务已成功下发给 Python 后端！");
+                } else {
+                    alert("❌ 任务下发失败：被网络层拦截，请检查 Cpolar/Ngrok！");
+                }
             } catch (e) {
                 console.error("同步预警配置到 Python 后端失败:", e);
+                alert("❌ 任务同步失败：无法连接到 Python 后端！");
             }
         }
 
