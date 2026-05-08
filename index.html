@@ -30,12 +30,12 @@
 <body class="min-h-screen p-4 md:p-8 grid-bg">
     
     <!-- 全局警报 -->
-    <div id="global-alert" class="hidden fixed top-0 left-0 w-full z-[100] bg-alert text-white p-4 shadow-2xl flex items-center justify-between px-10 animate-bounce">
+    <div id="global-alert" class="hidden fixed top-0 left-0 w-full z-[100] bg-alert text-white p-4 shadow-2xl flex items-center justify-between px-10">
         <div class="flex items-center gap-4">
-            <i class="ph-fill ph-warning-octagon text-3xl"></i>
+            <i class="ph-fill ph-warning-octagon text-3xl animate-bounce"></i>
             <div>
                 <p class="font-black text-lg uppercase tracking-tighter">🚨 预警触发 🚨</p>
-                <p id="alert-detail" class="text-xs font-mono opacity-80 italic">--</p>
+                <p id="alert-detail" class="text-xs font-mono opacity-80 italic">正在接收实时数据...</p>
             </div>
         </div>
         <button onclick="document.getElementById('global-alert').classList.add('hidden')" class="bg-white/20 px-6 py-2 rounded-full text-sm font-bold">关闭</button>
@@ -43,7 +43,7 @@
 
     <div class="max-w-[1400px] mx-auto space-y-6">
         
-        <!-- 顶部连接配置 (朋友只需要填一次) -->
+        <!-- 头部导航 -->
         <header class="glass-panel p-6 rounded-[2rem] border-t-4 border-brand">
             <div class="flex flex-col md:flex-row justify-between items-center gap-6">
                 <div class="flex items-center gap-5">
@@ -72,7 +72,7 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- 实时行情面板 -->
+            <!-- 实时行列 -->
             <div class="lg:col-span-4 h-[700px] flex flex-col glass-panel p-6 rounded-[2.5rem]">
                 <div class="flex items-center justify-between mb-8 px-2">
                     <h3 class="font-black text-white italic flex items-center gap-3 uppercase tracking-wider text-sm">
@@ -83,46 +83,42 @@
                     </div>
                 </div>
                 <div id="price-list" class="flex-1 overflow-y-auto space-y-3 log-container pr-2">
-                    <!-- 动态生成 -->
                     <div class="flex flex-col items-center justify-center h-full opacity-20 text-center px-10">
                         <i class="ph ph-selection-plus text-6xl mb-4"></i>
-                        <p class="text-sm italic">请输入 Ngrok 转发地址并点击“建立在线链路”开始监控</p>
+                        <p class="text-sm italic tracking-widest uppercase text-slate-400">请在上方输入 Ngrok 链接并连接</p>
                     </div>
                 </div>
             </div>
 
-            <!-- 控制与图表区 -->
+            <!-- 控制区 -->
             <div class="lg:col-span-8 space-y-6">
-                <!-- 指数大屏 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="glass-panel p-6 rounded-[2rem] border-l-4 border-brand">
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">典藏板块指数 (AVG)</p>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">典藏指数 (AVG)</p>
                         <span id="avg-price" class="text-4xl font-black text-white font-mono tracking-tighter">0.00</span>
                     </div>
                     <div class="glass-panel p-6 rounded-[2rem] border-l-4 border-amber-500">
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">累计连接终端</p>
-                        <span id="online-users" class="text-4xl font-black text-white font-mono tracking-tighter">0</span>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">预警触线统计</p>
+                        <span id="alert-stat" class="text-4xl font-black text-white font-mono tracking-tighter">0</span>
                     </div>
                     <div class="glass-panel p-6 rounded-[2rem] border-l-4 border-emerald-500">
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">预警触发频率</p>
-                        <span id="alert-stat" class="text-4xl font-black text-white font-mono tracking-tighter">0</span>
+                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">系统运行时间</p>
+                        <span id="runtime" class="text-4xl font-black text-white font-mono tracking-tighter">00:00</span>
                     </div>
                 </div>
 
-                <!-- 预警控制中心 -->
                 <div class="glass-panel p-8 rounded-[2rem] bg-brand/5 border border-brand/10">
-                    <h2 class="text-xl font-black text-white flex items-center gap-3 mb-6 italic">
-                        <i class="ph-fill ph-target text-brand"></i> 智能预警配置
+                    <h2 class="text-xl font-black text-white flex items-center gap-3 mb-6 italic uppercase tracking-wider">
+                        <i class="ph-fill ph-target text-brand"></i> 单品监控预警
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                        <input id="alert-name" type="text" placeholder="藏品名称 (如: 步辇图)" class="md:col-span-6 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:border-brand outline-none transition-all">
-                        <input id="alert-price" type="number" placeholder="预警价 (元)" class="md:col-span-4 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white font-mono">
-                        <button onclick="addAlert()" class="md:col-span-2 bg-white text-darker font-black rounded-2xl hover:bg-brand hover:text-white transition-all uppercase text-[10px] tracking-widest">添加任务</button>
+                        <input id="alert-name" type="text" placeholder="藏品名称 (如: 步辇图)" class="md:col-span-6 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-brand">
+                        <input id="alert-price" type="number" placeholder="预警价" class="md:col-span-4 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white font-mono">
+                        <button onclick="addAlert()" class="md:col-span-2 bg-white text-darker font-black rounded-2xl hover:bg-brand hover:text-white transition-all uppercase text-[10px] tracking-widest">添加</button>
                     </div>
                     <div id="active-alerts" class="mt-6 flex flex-wrap gap-2"></div>
                 </div>
 
-                <!-- 图表趋势 -->
                 <div class="glass-panel p-8 rounded-[2rem] h-[330px]">
                     <canvas id="mainChart"></canvas>
                 </div>
@@ -137,17 +133,12 @@
         let labels = [];
         let userAlerts = [];
         let alertCount = 0;
+        let startTime = Date.now();
 
-        // 初始化
         function init() {
             initChart();
-            // 自动加载上次使用的 URL
             const savedUrl = localStorage.getItem('xmeta_api_url');
-            if (savedUrl) {
-                document.getElementById('api-url').value = savedUrl;
-                // 如果想让朋友打开就自动连，可以开启下面这一行
-                // toggleMonitor(); 
-            }
+            if (savedUrl) document.getElementById('api-url').value = savedUrl;
         }
 
         function initChart() {
@@ -182,79 +173,54 @@
             const url = document.getElementById('api-url').value.trim().replace(/\/$/, "");
             if (!url) return;
             localStorage.setItem('xmeta_api_url', url);
-            toggleMonitor();
-        }
-
-        async function fetchPrices() {
-            const baseUrl = document.getElementById('api-url').value.trim().replace(/\/$/, "");
-            try {
-                const res = await fetch(`${baseUrl}/prices`);
-                const result = await res.json();
-                if (result.status === 'success') {
-                    document.getElementById('status-dot').className = "w-2.5 h-2.5 rounded-full bg-success animate-pulse";
-                    document.getElementById('status-text').innerText = "链路在线: 实时接收中";
-                    document.getElementById('status-text').className = "text-[10px] font-bold text-success uppercase tracking-widest italic";
-                    return result;
-                }
-            } catch (e) {
-                document.getElementById('status-dot').className = "w-2.5 h-2.5 rounded-full bg-alert";
-                document.getElementById('status-text').innerText = "链路断开: 请确认 Python/Ngrok 正常";
-                document.getElementById('status-text').className = "text-[10px] font-bold text-alert uppercase tracking-widest italic";
-                return null;
+            if (!isRunning) {
+                isRunning = true;
+                setInterval(async () => {
+                    // 关键修复：加入 ngrok-skip-browser-warning 请求头绕过拦截
+                    const res = await fetch(`${url}/prices`, {
+                        headers: {
+                            'ngrok-skip-browser-warning': 'true'
+                        }
+                    }).then(r => r.json()).catch(() => null);
+                    
+                    if (res) updateUI(res);
+                    updateTimer();
+                }, 3000);
             }
-        }
-
-        function toggleMonitor() {
-            if (isRunning) return;
-            isRunning = true;
-            
-            setInterval(async () => {
-                const result = await fetchPrices();
-                if (result) updateUI(result);
-            }, 3000);
         }
 
         function updateUI(result) {
             const data = result.data;
-            const listContainer = document.getElementById('price-list');
-            listContainer.innerHTML = "";
-            let sum = 0;
-            let currentTriggered = null;
+            const list = document.getElementById('price-list');
+            list.innerHTML = "";
+            let sum = 0, alertTriggered = false;
 
-            document.getElementById('online-users').innerText = result.online_users || 0;
             document.getElementById('sync-time').innerText = result.time;
+            document.getElementById('status-dot').className = "w-2.5 h-2.5 rounded-full bg-success animate-pulse";
+            document.getElementById('status-text').innerText = "在线实时同步中";
+            document.getElementById('status-text').className = "text-[10px] font-bold text-success uppercase tracking-widest italic";
 
             data.forEach(item => {
                 sum += item.price;
-                let isAlert = false;
-                userAlerts.forEach(alert => {
-                    if (item.name.includes(alert.name) && item.price <= alert.price) {
-                        isAlert = true;
-                        currentTriggered = { name: item.name, price: item.price, target: alert.price };
-                    }
-                });
+                let isAlert = userAlerts.some(a => item.name.includes(a.name) && item.price <= a.price);
+                if (isAlert) alertTriggered = { n: item.name, p: item.price };
 
-                listContainer.innerHTML += `
-                    <div class="flex items-center justify-between p-5 rounded-2xl border transition-all ${isAlert ? 'bg-alert/20 border-alert animate-bounce' : 'bg-white/5 border-white/5 hover:bg-white/10'}">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-black italic ${isAlert ? 'text-alert' : 'text-slate-200'}">${item.name}</span>
-                            <span class="text-[10px] font-mono text-slate-500 uppercase">${isAlert ? '🚨 Target Price Reached' : 'Current Floor'}</span>
-                        </div>
-                        <div class="text-sm font-black font-mono ${isAlert ? 'text-alert' : 'text-success'}">¥${item.price.toFixed(2)}</div>
+                list.innerHTML += `
+                    <div class="flex items-center justify-between p-5 rounded-2xl border ${isAlert ? 'bg-alert/20 border-alert' : 'bg-white/5 border-white/5'}">
+                        <span class="text-sm font-bold ${isAlert ? 'text-alert' : 'text-slate-200'}">${item.name}</span>
+                        <span class="text-sm font-black font-mono ${isAlert ? 'text-alert' : 'text-success'}">¥${item.price.toFixed(2)}</span>
                     </div>
                 `;
             });
 
             const avg = sum / (data.length || 1);
             document.getElementById('avg-price').innerText = avg.toFixed(2);
-            
-            if (currentTriggered) {
+            if (alertTriggered) {
                 document.getElementById('global-alert').classList.remove('hidden');
-                document.getElementById('alert-detail').innerText = `${currentTriggered.name} 触线! 当前: ¥${currentTriggered.price} | 目标: ¥${currentTriggered.target}`;
+                document.getElementById('alert-detail').innerText = `${alertTriggered.n} 触线! 当前: ¥${alertTriggered.p.toFixed(2)}`;
                 alertCount++;
                 document.getElementById('alert-stat').innerText = alertCount;
             }
-
             priceHistory.push(avg);
             labels.push("");
             if(priceHistory.length > 20) { priceHistory.shift(); labels.shift(); }
@@ -262,24 +228,23 @@
         }
 
         function addAlert() {
-            const name = document.getElementById('alert-name').value.trim();
-            const price = parseFloat(document.getElementById('alert-price').value);
-            if (name && !isNaN(price)) {
-                userAlerts.push({name, price});
-                document.getElementById('alert-name').value = "";
-                document.getElementById('alert-price').value = "";
-                renderAlertTags();
+            const n = document.getElementById('alert-name').value;
+            const p = parseFloat(document.getElementById('alert-price').value);
+            if (n && p) {
+                userAlerts.push({name: n, price: p});
+                const container = document.getElementById('active-alerts');
+                container.innerHTML = userAlerts.map((a, i) => `
+                    <div class="bg-brand/20 border border-brand/40 px-3 py-1 rounded-lg text-xs flex items-center gap-2">
+                        ${a.name} < ¥${a.price}
+                        <i class="ph ph-x cursor-pointer" onclick="userAlerts.splice(${i},1);renderAlerts()"></i>
+                    </div>
+                `).join('');
             }
         }
 
-        function renderAlertTags() {
-            const container = document.getElementById('active-alerts');
-            container.innerHTML = userAlerts.map((a, i) => `
-                <div class="bg-brand/10 border border-brand/30 px-4 py-2 rounded-xl flex items-center gap-3">
-                    <span class="text-xs font-black text-white italic uppercase">${a.name} < ¥${a.price}</span>
-                    <i class="ph ph-trash text-slate-500 hover:text-alert cursor-pointer" onclick="userAlerts.splice(${i},1);renderAlertTags()"></i>
-                </div>
-            `).join('');
+        function updateTimer() {
+            const s = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('runtime').innerText = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
         }
 
         window.onload = init;
