@@ -127,12 +127,12 @@
             <div class="lg:col-span-8 space-y-6">
                 <div class="glass-panel p-8 rounded-[2rem] bg-brand/5 border border-brand/10">
                     <h2 class="text-xl font-black text-white flex items-center gap-3 mb-6 tracking-wide">
-                        <i class="ph-fill ph-target text-brand"></i> 单品智能预警
+                        <i class="ph-fill ph-target text-brand"></i> 单品智能预警 (自动同步至微信端)
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                         <input id="alert-name" type="text" placeholder="输入藏品关键字 (如: 步辇图)..." class="md:col-span-6 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-brand transition-all">
                         <input id="alert-price" type="number" placeholder="预警价 (元)" class="md:col-span-4 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white font-mono">
-                        <button onclick="addAlert()" class="md:col-span-2 bg-white text-darker font-black rounded-2xl hover:bg-brand hover:text-white transition-all uppercase text-xs tracking-widest shadow-xl shadow-white/5">添加</button>
+                        <button onclick="addAlert()" class="md:col-span-2 bg-white text-darker font-black rounded-2xl hover:bg-brand hover:text-white transition-all uppercase text-xs tracking-widest shadow-xl shadow-white/5">添加任务</button>
                     </div>
                     <div id="active-alerts" class="mt-6 flex flex-wrap gap-2"></div>
                 </div>
@@ -203,6 +203,28 @@
             }
         }
 
+        // 👉 新增核心功能：将网页当前的预警列表打包发送给 Python 后端
+        async function syncAlertsToBackend() {
+            if (!isRunning) return; // 还没连接时不发送
+            const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
+            
+            // 组装成后端 Python 能理解的格式: [{"name": "xxx", "target_price": 100}]
+            const payload = userAlerts.map(alert => ({
+                name: alert.name,
+                target_price: alert.price
+            }));
+
+            try {
+                await fetch(`${baseUrl}/update_alerts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (e) {
+                console.error("同步预警配置到 Python 后端失败:", e);
+            }
+        }
+
         function toggleMonitor() {
             if (isRunning) return;
             isRunning = true;
@@ -210,6 +232,8 @@
             document.getElementById('start-btn').disabled = true;
             document.getElementById('start-btn').className = "bg-slate-800 text-slate-500 px-4 py-2 rounded-xl text-xs font-bold cursor-not-allowed";
             
+            syncAlertsToBackend(); // 一连上就把之前填好的预警推过去
+
             setInterval(async () => {
                 const result = await fetchPrices();
                 if (result) updateUI(result);
@@ -272,6 +296,7 @@
             chartInstance.update();
         }
 
+        // 添加任务：不仅加到本地，还要同步给 Python
         function addAlert() {
             const name = document.getElementById('alert-name').value.trim();
             const price = parseFloat(document.getElementById('alert-price').value);
@@ -280,7 +305,15 @@
                 document.getElementById('alert-name').value = "";
                 document.getElementById('alert-price').value = "";
                 renderAlertTags();
+                syncAlertsToBackend(); // 👉 触发同步
             }
+        }
+
+        // 移除任务：不仅在网页删掉，也要通知 Python 停止监控
+        function removeAlert(index) {
+            userAlerts.splice(index, 1);
+            renderAlertTags();
+            syncAlertsToBackend(); // 👉 触发同步
         }
 
         function renderAlertTags() {
@@ -288,7 +321,7 @@
             container.innerHTML = userAlerts.map((a, i) => `
                 <div class="bg-brand/10 border border-brand/40 px-4 py-2 rounded-xl flex items-center gap-3">
                     <span class="text-xs font-black text-white italic">${a.name} < ¥${a.price}</span>
-                    <i class="ph ph-trash text-slate-500 hover:text-alert cursor-pointer" onclick="userAlerts.splice(${i},1);renderAlertTags()"></i>
+                    <i class="ph ph-trash text-slate-500 hover:text-alert cursor-pointer" onclick="removeAlert(${i})"></i>
                 </div>
             `).join('');
         }
