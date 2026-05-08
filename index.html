@@ -176,7 +176,6 @@
             if (!isRunning) {
                 isRunning = true;
                 setInterval(async () => {
-                    // 关键修复：加入 ngrok-skip-browser-warning 请求头绕过拦截
                     const res = await fetch(`${url}/prices`, {
                         headers: {
                             'ngrok-skip-browser-warning': 'true'
@@ -199,6 +198,21 @@
             document.getElementById('status-dot').className = "w-2.5 h-2.5 rounded-full bg-success animate-pulse";
             document.getElementById('status-text').innerText = "在线实时同步中";
             document.getElementById('status-text').className = "text-[10px] font-bold text-success uppercase tracking-widest italic";
+
+            // 增加对于后端空数据的优雅处理
+            if (!data || data.length === 0) {
+                list.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full opacity-60 text-center px-10 py-16">
+                        <i class="ph ph-hourglass-high text-5xl mb-4 text-warning animate-pulse"></i>
+                        <p class="text-sm italic tracking-widest text-slate-400 leading-relaxed">
+                            链路畅通，等待后端数据<br/>
+                            <span class="text-[10px] mt-2 block">可能原因：Python 爬虫正在抓取或遇到网络超时</span>
+                        </p>
+                    </div>
+                `;
+                document.getElementById('avg-price').innerText = "0.00";
+                return;
+            }
 
             data.forEach(item => {
                 sum += item.price;
