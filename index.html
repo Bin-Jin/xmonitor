@@ -8,17 +8,61 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script>
-        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { dark: '#020617', darker: '#000000', brand: '#3b82f6', alert: '#ef4444', success: '#10b981', warning: '#f59e0b' } } } }
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#020617', darker: '#000000', brand: '#3b82f6', alert: '#ef4444', success: '#10b981', warning: '#f59e0b'
+                    },
+                    animation: { 
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite',
+                        'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+                    },
+                    keyframes: {
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-3px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(3px, 0, 0)' },
+                        }
+                    }
+                }
+            }
+        }
     </script>
-    <style>body { background-color: #020617; color: #e2e8f0; font-family: 'Inter', sans-serif; } .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); } .grid-bg { background-image: radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.05) 1px, transparent 0); background-size: 32px 32px; } .log-container::-webkit-scrollbar { width: 4px; } .log-container::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }</style>
+    <style>
+        body { background-color: #020617; color: #e2e8f0; overflow-x: hidden; font-family: 'Inter', sans-serif; }
+        .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .grid-bg { background-image: radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.05) 1px, transparent 0); background-size: 32px 32px; }
+        .log-container::-webkit-scrollbar { width: 4px; }
+        .log-container::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        .market-index-gradient { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+    </style>
 </head>
 <body class="min-h-screen p-4 md:p-6 lg:p-8 grid-bg">
     
+    <!-- 全局警报条 -->
+    <div id="global-alert" class="hidden fixed top-0 left-0 w-full z-[100] bg-alert text-white p-4 shadow-2xl animate-bounce-in flex items-center justify-between px-10">
+        <div class="flex items-center gap-4">
+            <i class="ph-fill ph-warning-octagon text-3xl animate-pulse"></i>
+            <div>
+                <p class="font-black text-lg">⚠️ 触发预警！检测到低价藏品</p>
+                <p id="alert-detail" class="text-xs font-mono italic">正在检查详细行情...</p>
+            </div>
+        </div>
+        <button onclick="dismissGlobalAlert()" class="bg-white/20 hover:bg-white/30 text-white font-bold px-6 py-2 rounded-full text-sm">关闭警报声音</button>
+    </div>
+
+    <!-- 👉 新增：Toast 状态提示弹窗 -->
     <div id="toast-msg" class="fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-20 opacity-0 bg-brand text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none">
-        <i class="ph-bold ph-check-circle text-2xl"></i><span id="toast-text" class="text-sm tracking-wide">同步成功</span>
+        <i class="ph-bold ph-check-circle text-2xl"></i>
+        <span id="toast-text" class="text-sm tracking-wide">同步成功</span>
     </div>
 
     <div class="max-w-[1600px] mx-auto space-y-6">
+        
+        <!-- 头部状态栏 -->
         <header class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
             <div class="lg:col-span-1 glass-panel p-6 rounded-[2rem] flex flex-col justify-between">
                 <div class="flex items-center gap-4">
@@ -27,129 +71,225 @@
                     </div>
                     <div>
                         <h1 class="text-2xl font-black italic tracking-tighter text-white uppercase">XMeta <span class="text-brand">Radar</span> Pro</h1>
-                        <div class="flex items-center gap-2"><div id="status-dot" class="w-2 h-2 rounded-full bg-slate-500"></div><span id="status-text" class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">等待链路配置...</span></div>
+                        <div class="flex items-center gap-2">
+                            <div id="status-dot" class="w-2 h-2 rounded-full bg-slate-500"></div>
+                            <span id="status-text" class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">等待链路配置...</span>
+                        </div>
                     </div>
                 </div>
                 
+                <!-- 远程连接配置 -->
                 <div class="mt-6 space-y-3">
                     <div>
                         <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">专属推送标识 (WxPusher UID)</label>
                         <input id="user-uid" type="text" placeholder="以 UID_ 开头 (找站长要二维码)" class="w-full mt-1 bg-darker/60 border border-brand/30 rounded-xl px-4 py-2 text-xs text-brand font-mono focus:outline-none focus:border-brand">
                     </div>
-                    <div class="flex gap-2">
-                        <input id="api-url" type="text" placeholder="http://你的公网地址" class="flex-1 bg-darker/60 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-brand">
-                        <button onclick="toggleMonitor()" id="start-btn" class="bg-brand hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all">连接并同步</button>
+                    <div>
+                        <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">数据源地址 (URL)</label>
+                        <div class="flex gap-2">
+                            <input id="api-url" type="text" value="http://127.0.0.1:5000" placeholder="http://你的公网地址" class="flex-1 bg-darker/60 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-brand">
+                            <button onclick="toggleMonitor()" id="start-btn" class="bg-brand hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all">连接</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- 数据看板 -->
             <div class="lg:col-span-2 glass-panel p-8 rounded-[2rem] border-t-4 border-brand flex flex-col md:flex-row items-center gap-10">
                 <div class="flex-1">
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="ph-bold ph-globe"></i> 典藏实时指数 (AVG Floor)</p>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="ph-bold ph-globe"></i> 典藏实时指数 (Pro-Trimmed)</p>
                     <div class="flex items-baseline gap-4"><span id="avg-price" class="text-6xl font-black text-white font-mono tracking-tighter">0.00</span></div>
                 </div>
                 <div class="grid grid-cols-2 gap-8 border-l border-white/5 pl-10 h-full py-2">
-                    <div><p class="text-[10px] text-slate-500 font-bold uppercase mb-1">监控项目数</p><p id="item-count" class="text-2xl font-bold text-white font-mono">0</p></div>
-                    <div><p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Last Sync</p><p id="sync-time" class="text-xl font-bold text-brand font-mono">--:--:--</p></div>
+                    <div>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">监控项目数</p>
+                        <p id="item-count" class="text-2xl font-bold text-white font-mono">0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">触线警报</p>
+                        <p id="alert-stat" class="text-2xl font-bold text-alert font-mono">0</p>
+                    </div>
                 </div>
             </div>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-4 h-[650px] flex flex-col glass-panel p-6 rounded-[2rem]">
-                <h3 class="font-black text-white italic mb-6 flex items-center gap-2 uppercase"><i class="ph-bold ph-intersect text-brand"></i> 行情实时雷达</h3>
-                <div id="price-list" class="flex-1 overflow-y-auto space-y-3 log-container pr-2"></div>
+            <!-- 实时列表 -->
+            <div class="lg:col-span-4 h-[650px] flex flex-col glass-panel p-6 rounded-[2rem] overflow-hidden">
+                <h3 class="font-black text-white italic mb-6 flex items-center gap-2 tracking-wide uppercase">
+                    <i class="ph-bold ph-intersect text-brand"></i> 行情实时雷达
+                </h3>
+                <div id="price-list" class="flex-1 overflow-y-auto space-y-3 log-container pr-2">
+                    <div class="flex flex-col items-center justify-center h-full opacity-20">
+                        <i class="ph ph-circle-dashed text-6xl animate-spin mb-4"></i>
+                        <p class="text-sm font-mono italic tracking-widest">等待链路建立...</p>
+                    </div>
+                </div>
             </div>
 
+            <!-- 预警与趋势 -->
             <div class="lg:col-span-8 space-y-6">
                 <div class="glass-panel p-8 rounded-[2rem] bg-brand/5 border border-brand/10">
                     <h2 class="text-xl font-black text-white flex items-center gap-3 mb-6 tracking-wide">
-                        <i class="ph-fill ph-target text-brand"></i> 私人定制预警 (仅发送至上方 UID)
+                        <i class="ph-fill ph-target text-brand"></i> 单品智能预警 (自动同步至微信端)
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                        <input id="alert-name" type="text" placeholder="藏品名称..." class="md:col-span-6 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-brand">
+                        <input id="alert-name" type="text" placeholder="输入藏品关键字 (如: 步辇图)..." class="md:col-span-6 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-brand transition-all">
                         <input id="alert-price" type="number" placeholder="预警价 (元)" class="md:col-span-4 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white font-mono">
-                        <button onclick="addAlert()" class="md:col-span-2 bg-white text-darker font-black rounded-2xl hover:bg-brand hover:text-white uppercase text-xs">添加任务</button>
+                        <button onclick="addAlert()" class="md:col-span-2 bg-white text-darker font-black rounded-2xl hover:bg-brand hover:text-white transition-all uppercase text-xs tracking-widest shadow-xl shadow-white/5">添加任务</button>
                     </div>
                     <div id="active-alerts" class="mt-6 flex flex-wrap gap-2"></div>
                 </div>
-                <div class="glass-panel p-8 rounded-[2rem] h-[350px]"><canvas id="mainChart"></canvas></div>
+
+                <div class="glass-panel p-8 rounded-[2rem] h-[350px]">
+                    <canvas id="mainChart"></canvas>
+                </div>
             </div>
         </main>
     </div>
 
+    <!-- 警报声 -->
+    <audio id="alert-audio" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+    </audio>
+
     <script>
         let isRunning = false;
         let chartInstance = null;
-        let priceHistory = [], labels = [];
+        let priceHistory = [];
+        let labels = [];
         let userAlerts = [];
+        let alertCount = 0;
+        let soundActive = false;
         let toastTimeout;
 
-        // 👉 启动时加载朋友上次留下的配置
-        window.onload = () => {
-            initChart();
-            const savedUrl = localStorage.getItem('xmeta_url');
-            const savedUid = localStorage.getItem('xmeta_uid');
-            const savedAlerts = localStorage.getItem('xmeta_alerts');
-            
-            if(savedUrl) document.getElementById('api-url').value = savedUrl;
-            if(savedUid) document.getElementById('user-uid').value = savedUid;
-            if(savedAlerts) {
-                userAlerts = JSON.parse(savedAlerts);
-                renderAlertTags();
-            }
-        };
-
-        function showToast(msg, isWarning=false) {
-            const toast = document.getElementById('toast-msg');
-            document.getElementById('toast-text').innerText = msg;
-            toast.className = `fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none ${isWarning ? 'bg-warning' : 'bg-success'} text-white`;
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => { toast.classList.replace('translate-y-0', 'translate-y-20'); toast.classList.replace('opacity-100', 'opacity-0'); }, 3000);
+        function initChart() {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: priceHistory,
+                        borderColor: '#3b82f6',
+                        borderWidth: 4,
+                        pointRadius: 0,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#475569' } }
+                    }
+                }
+            });
         }
 
-        // 👉 核心：打包 UID 和 Alert 一起发送给后端
-        async function syncAlertsToBackend() {
-            if (!isRunning) return; 
-            const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
-            const uid = document.getElementById('user-uid').value.trim();
+        // 👉 新增：控制状态弹窗的显示
+        function showToast(msg, isWarning=false) {
+            const toast = document.getElementById('toast-msg');
+            const text = document.getElementById('toast-text');
+            const icon = toast.querySelector('i');
             
-            if(!uid || !uid.startsWith("UID_")) {
-                showToast("同步失败：请正确填写以 UID_ 开头的账号", true);
+            text.innerText = msg;
+            if(isWarning) {
+                toast.className = "fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 bg-warning text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none";
+                icon.className = "ph-bold ph-warning-circle text-2xl";
+            } else {
+                toast.className = "fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 bg-success text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none";
+                icon.className = "ph-bold ph-check-circle text-2xl";
+            }
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.replace('translate-y-0', 'translate-y-20');
+                toast.classList.replace('opacity-100', 'opacity-0');
+            }, 3000);
+        }
+
+        async function fetchPrices() {
+            const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
+            try {
+                const res = await fetch(`${baseUrl}/prices`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-success animate-ping-slow";
+                    document.getElementById('status-text').innerText = "远程链路: 在线同步中";
+                    return result;
+                }
+            } catch (e) {
+                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-warning";
+                document.getElementById('status-text').innerText = "链路异常: 请检查 URL 或 Python 状态";
+                return null;
+            }
+        }
+
+        // 👉 核心修复：完善同步与容错反馈
+        async function syncAlertsToBackend() {
+            if (!isRunning) {
+                showToast("任务已保存，请点击【连接】启动", true);
+                return; 
+            }
+            const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
+            const uidEl = document.getElementById('user-uid');
+            const uid = uidEl ? uidEl.value.trim() : "";
+            
+            if(!uid) {
+                showToast("同步失败：请正确填写 WxPusher UID", true);
                 return;
             }
 
-            // 保存到浏览器，朋友下次打开还在
-            localStorage.setItem('xmeta_uid', uid);
-            localStorage.setItem('xmeta_alerts', JSON.stringify(userAlerts));
-
             const payload = {
                 uid: uid,
-                alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price }))
+                alerts: userAlerts.map(alert => ({
+                    name: alert.name,
+                    target_price: alert.price
+                }))
             };
 
             try {
                 const res = await fetch(`${baseUrl}/update_alerts`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true' 
+                    },
                     body: JSON.stringify(payload)
                 });
-                if(res.ok) showToast("专属配置已同步至监控中心！");
-            } catch (e) { showToast("同步失败：无法连接后端", true); }
+                
+                if(res.ok) {
+                    showToast("配置已同步至后台哨兵");
+                } else {
+                    showToast("同步失败：请求被拦截", true);
+                }
+            } catch (e) {
+                console.error("同步预警配置到 Python 后端失败:", e);
+                showToast("同步失败：无法连接后端", true);
+            }
         }
 
         function toggleMonitor() {
             if (isRunning) return;
-            const uid = document.getElementById('user-uid').value.trim();
-            if(!uid) { alert("请先填写您的专属 WxPusher UID！"); return; }
+            const uidEl = document.getElementById('user-uid');
+            if(uidEl && !uidEl.value.trim()) { alert("请先填写您的专属 WxPusher UID！"); return; }
             
             localStorage.setItem('xmeta_url', document.getElementById('api-url').value);
+            if(uidEl) localStorage.setItem('xmeta_uid', uidEl.value.trim());
+            localStorage.setItem('xmeta_alerts', JSON.stringify(userAlerts));
             
             isRunning = true;
             document.getElementById('start-btn').innerText = "已连接";
             document.getElementById('start-btn').disabled = true;
             document.getElementById('start-btn').className = "bg-slate-800 text-slate-500 px-4 py-2 rounded-xl text-xs font-bold cursor-not-allowed";
-            document.getElementById('user-uid').disabled = true; // 连接后锁定 UID 不准改
+            if(uidEl) uidEl.disabled = true;
             
             syncAlertsToBackend(); 
 
@@ -173,12 +313,11 @@
         function updateUI(result) {
             const listContainer = document.getElementById('price-list');
             listContainer.innerHTML = "";
-            let sum = 0;
             document.getElementById('item-count').innerText = result.data.length;
             document.getElementById('sync-time').innerText = result.time;
 
+            // 1. 渲染列表并检查预警
             result.data.forEach(item => {
-                sum += item.price;
                 let isAlert = userAlerts.some(a => item.name.includes(a.name) && item.price <= a.price);
                 listContainer.innerHTML += `
                     <div class="flex items-center justify-between p-4 rounded-2xl border ${isAlert ? 'bg-alert/20 border-alert' : 'bg-white/5 border-white/5 hover:bg-white/10'}">
@@ -187,9 +326,29 @@
                     </div>
                 `;
             });
-            const avg = sum / (result.data.length || 1);
+
+            // 2. 🌟 专业的“截断平均 (Trimmed Mean)”算法
+            let prices = result.data.map(item => item.price).sort((a, b) => a - b);
+            let avg = 0;
+            
+            if (prices.length > 5) {
+                // 如果商品数量足够，去掉最高 10% 和最低 10% 的极端报价
+                let trimCount = Math.floor(prices.length * 0.1);
+                let validPrices = prices.slice(trimCount, prices.length - trimCount);
+                let sum = validPrices.reduce((a, b) => a + b, 0);
+                avg = sum / validPrices.length;
+                console.log(`[指数平滑] 总数:${prices.length}, 去除极端值:${trimCount*2}个, 采用核心筹码:${validPrices.length}个`);
+            } else {
+                // 商品太少就直接算普通平均
+                let sum = prices.reduce((a, b) => a + b, 0);
+                avg = prices.length > 0 ? sum / prices.length : 0;
+            }
+
             document.getElementById('avg-price').innerText = avg.toFixed(2);
-            priceHistory.push(avg); labels.push("");
+            
+            // 3. 更新图表
+            priceHistory.push(avg); 
+            labels.push("");
             if(priceHistory.length > 20) { priceHistory.shift(); labels.shift(); }
             chartInstance.update();
         }
@@ -213,7 +372,8 @@
         }
 
         function renderAlertTags() {
-            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `
+            const container = document.getElementById('active-alerts');
+            container.innerHTML = userAlerts.map((a, i) => `
                 <div class="bg-brand/10 border border-brand/40 px-4 py-2 rounded-xl flex items-center gap-3">
                     <span class="text-xs font-black text-white italic">${a.name} < ¥${a.price}</span>
                     <i class="ph ph-trash text-slate-500 hover:text-alert cursor-pointer" onclick="removeAlert(${i})"></i>
@@ -221,12 +381,29 @@
             `).join('');
         }
 
-        function initChart() {
-            chartInstance = new Chart(document.getElementById('mainChart').getContext('2d'), {
-                type: 'line', data: { labels: labels, datasets: [{ data: priceHistory, borderColor: '#3b82f6', borderWidth: 4, tension: 0.4, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: 'rgba(255,255,255,0.03)' } } } }
-            });
+        function dismissGlobalAlert() {
+            document.getElementById('global-alert').classList.add('hidden');
+            const audio = document.getElementById('alert-audio');
+            audio.pause();
+            audio.currentTime = 0;
+            soundActive = false;
         }
+
+        window.onload = () => {
+            initChart();
+            const savedUrl = localStorage.getItem('xmeta_url');
+            const savedUid = localStorage.getItem('xmeta_uid');
+            const savedAlerts = localStorage.getItem('xmeta_alerts');
+            
+            if(savedUrl) document.getElementById('api-url').value = savedUrl;
+            if(savedUid && document.getElementById('user-uid')) document.getElementById('user-uid').value = savedUid;
+            if(savedAlerts) {
+                try {
+                    userAlerts = JSON.parse(savedAlerts);
+                    renderAlertTags();
+                } catch(e) {}
+            }
+        };
     </script>
 </body>
 </html>
