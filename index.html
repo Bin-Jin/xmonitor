@@ -12,32 +12,19 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        dark: '#020617', darker: '#000000', brand: '#3b82f6', alert: '#ef4444', success: '#10b981', warning: '#f59e0b'
-                    },
-                    animation: { 
-                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite',
-                        'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
-                    },
-                    keyframes: {
-                        shake: {
-                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
-                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
-                            '30%, 50%, 70%': { transform: 'translate3d(-3px, 0, 0)' },
-                            '40%, 60%': { transform: 'translate3d(3px, 0, 0)' },
-                        }
-                    }
+                    colors: { dark: '#020617', darker: '#000000', brand: '#3b82f6', alert: '#ef4444', success: '#10b981', warning: '#f59e0b' },
+                    animation: { 'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite', 'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite' },
+                    keyframes: { shake: { '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' }, '20%, 80%': { transform: 'translate3d(2px, 0, 0)' }, '30%, 50%, 70%': { transform: 'translate3d(-3px, 0, 0)' }, '40%, 60%': { transform: 'translate3d(3px, 0, 0)' } } }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #020617; color: #e2e8f0; overflow-x: hidden; font-family: 'Inter', sans-serif; }
+        body { background-color: #020617; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .glass-panel { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); }
         .grid-bg { background-image: radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.05) 1px, transparent 0); background-size: 32px 32px; }
         .log-container::-webkit-scrollbar { width: 4px; }
         .log-container::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-        .market-index-gradient { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-6 lg:p-8 grid-bg">
@@ -54,7 +41,7 @@
         <button onclick="dismissGlobalAlert()" class="bg-white/20 hover:bg-white/30 text-white font-bold px-6 py-2 rounded-full text-sm">关闭警报声音</button>
     </div>
 
-    <!-- 👉 新增：Toast 状态提示弹窗 -->
+    <!-- 状态提示弹窗 -->
     <div id="toast-msg" class="fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-20 opacity-0 bg-brand text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none">
         <i class="ph-bold ph-check-circle text-2xl"></i>
         <span id="toast-text" class="text-sm tracking-wide">同步成功</span>
@@ -62,8 +49,8 @@
 
     <div class="max-w-[1600px] mx-auto space-y-6">
         
-        <!-- 头部状态栏 -->
         <header class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+            <!-- 左侧控制面板 -->
             <div class="lg:col-span-1 glass-panel p-6 rounded-[2rem] flex flex-col justify-between">
                 <div class="flex items-center gap-4">
                     <div class="w-14 h-14 bg-brand/10 rounded-2xl flex items-center justify-center border border-brand/20">
@@ -78,7 +65,6 @@
                     </div>
                 </div>
                 
-                <!-- 远程连接配置 -->
                 <div class="mt-6 space-y-3">
                     <div>
                         <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">专属推送标识 (WxPusher UID)</label>
@@ -87,34 +73,42 @@
                     <div>
                         <label class="text-[10px] text-slate-500 font-bold uppercase ml-1">数据源地址 (URL)</label>
                         <div class="flex gap-2">
-                            <input id="api-url" type="text" value="http://127.0.0.1:5000" placeholder="http://你的公网地址" class="flex-1 bg-darker/60 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-brand">
+                            <input id="api-url" type="text" value="http://127.0.0.1:5000" placeholder="https://你的公网地址" class="flex-1 bg-darker/60 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-brand">
                             <button onclick="toggleMonitor()" id="start-btn" class="bg-brand hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all">连接</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 数据看板 -->
+            <!-- 数据大盘 -->
             <div class="lg:col-span-2 glass-panel p-8 rounded-[2rem] border-t-4 border-brand flex flex-col md:flex-row items-center gap-10">
                 <div class="flex-1">
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="ph-bold ph-globe"></i> 典藏实时指数 (Pro-Trimmed)</p>
-                    <div class="flex items-baseline gap-4"><span id="avg-price" class="text-6xl font-black text-white font-mono tracking-tighter">0.00</span></div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <i class="ph-bold ph-globe"></i> 典藏实时指数 (Pro-Trimmed)
+                    </p>
+                    <div class="flex items-baseline gap-4">
+                        <span id="avg-price" class="text-6xl font-black text-white font-mono tracking-tighter">0.00</span>
+                    </div>
                 </div>
-                <div class="grid grid-cols-2 gap-8 border-l border-white/5 pl-10 h-full py-2">
+                <div class="grid grid-cols-3 gap-6 border-l border-white/5 pl-8 h-full py-2">
                     <div>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">监控项目数</p>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">监控项目</p>
                         <p id="item-count" class="text-2xl font-bold text-white font-mono">0</p>
                     </div>
                     <div>
                         <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">触线警报</p>
                         <p id="alert-stat" class="text-2xl font-bold text-alert font-mono">0</p>
                     </div>
+                    <div>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase mb-1">Last Sync</p>
+                        <p id="sync-time" class="text-xl font-bold text-brand font-mono">--:--:--</p>
+                    </div>
                 </div>
             </div>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- 实时列表 -->
+            <!-- 实时雷达 -->
             <div class="lg:col-span-4 h-[650px] flex flex-col glass-panel p-6 rounded-[2rem] overflow-hidden">
                 <h3 class="font-black text-white italic mb-6 flex items-center gap-2 tracking-wide uppercase">
                     <i class="ph-bold ph-intersect text-brand"></i> 行情实时雷达
@@ -127,16 +121,16 @@
                 </div>
             </div>
 
-            <!-- 预警与趋势 -->
+            <!-- 预警与走势图 -->
             <div class="lg:col-span-8 space-y-6">
                 <div class="glass-panel p-8 rounded-[2rem] bg-brand/5 border border-brand/10">
                     <h2 class="text-xl font-black text-white flex items-center gap-3 mb-6 tracking-wide">
-                        <i class="ph-fill ph-target text-brand"></i> 单品智能预警 (自动同步至微信端)
+                        <i class="ph-fill ph-target text-brand"></i> 私人定制预警 (自动同步至上方 UID)
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                         <input id="alert-name" type="text" placeholder="输入藏品关键字 (如: 步辇图)..." class="md:col-span-6 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-brand transition-all">
                         <input id="alert-price" type="number" placeholder="预警价 (元)" class="md:col-span-4 bg-darker/60 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white font-mono">
-                        <button onclick="addAlert()" class="md:col-span-2 bg-white text-darker font-black rounded-2xl hover:bg-brand hover:text-white transition-all uppercase text-xs tracking-widest shadow-xl shadow-white/5">添加任务</button>
+                        <button onclick="addAlert()" class="md:col-span-2 bg-white text-darker font-black rounded-2xl hover:bg-brand hover:text-white transition-all uppercase text-xs tracking-widest">添加任务</button>
                     </div>
                     <div id="active-alerts" class="mt-6 flex flex-wrap gap-2"></div>
                 </div>
@@ -163,48 +157,14 @@
         let soundActive = false;
         let toastTimeout;
 
-        function initChart() {
-            const ctx = document.getElementById('mainChart').getContext('2d');
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: priceHistory,
-                        borderColor: '#3b82f6',
-                        borderWidth: 4,
-                        pointRadius: 0,
-                        tension: 0.4,
-                        fill: true,
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { display: false },
-                        y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#475569' } }
-                    }
-                }
-            });
-        }
-
-        // 👉 新增：控制状态弹窗的显示
         function showToast(msg, isWarning=false) {
             const toast = document.getElementById('toast-msg');
             const text = document.getElementById('toast-text');
             const icon = toast.querySelector('i');
             
             text.innerText = msg;
-            if(isWarning) {
-                toast.className = "fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 bg-warning text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none";
-                icon.className = "ph-bold ph-warning-circle text-2xl";
-            } else {
-                toast.className = "fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 bg-success text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none";
-                icon.className = "ph-bold ph-check-circle text-2xl";
-            }
+            toast.className = `fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 ${isWarning?'bg-warning':'bg-success'} text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none`;
+            icon.className = isWarning ? "ph-bold ph-warning-circle text-2xl" : "ph-bold ph-check-circle text-2xl";
             
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => {
@@ -213,66 +173,36 @@
             }, 3000);
         }
 
-        async function fetchPrices() {
-            const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
-            try {
-                const res = await fetch(`${baseUrl}/prices`, {
-                    headers: { 'ngrok-skip-browser-warning': 'true' }
-                });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-success animate-ping-slow";
-                    document.getElementById('status-text').innerText = "远程链路: 在线同步中";
-                    return result;
-                }
-            } catch (e) {
-                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-warning";
-                document.getElementById('status-text').innerText = "链路异常: 请检查 URL 或 Python 状态";
-                return null;
-            }
-        }
-
-        // 👉 核心修复：完善同步与容错反馈
         async function syncAlertsToBackend() {
-            if (!isRunning) {
-                showToast("任务已保存，请点击【连接】启动", true);
-                return; 
-            }
+            if (!isRunning) { showToast("任务已保存，连接后将自动同步", true); return; }
             const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
             const uidEl = document.getElementById('user-uid');
             const uid = uidEl ? uidEl.value.trim() : "";
             
-            if(!uid) {
-                showToast("同步失败：请正确填写 WxPusher UID", true);
-                return;
-            }
+            if(!uid || !uid.startsWith("UID_")) { showToast("同步失败：请正确填写 UID", true); return; }
 
-            const payload = {
-                uid: uid,
-                alerts: userAlerts.map(alert => ({
-                    name: alert.name,
-                    target_price: alert.price
-                }))
-            };
+            const payload = { uid: uid, alerts: userAlerts.map(alert => ({ name: alert.name, target_price: alert.price })) };
 
             try {
-                const res = await fetch(`${baseUrl}/update_alerts`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true' 
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                if(res.ok) {
-                    showToast("配置已同步至后台哨兵");
-                } else {
-                    showToast("同步失败：请求被拦截", true);
+                const res = await fetch(`${baseUrl}/update_alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' }, body: JSON.stringify(payload) });
+                if(res.ok) showToast("配置已同步至后台哨兵"); else showToast("同步失败：请求被拦截", true);
+            } catch (e) { showToast("同步失败：无法连接后端", true); }
+        }
+
+        async function doFetch() {
+            const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
+            try {
+                const res = await fetch(`${baseUrl}/prices`, { headers: { 'ngrok-skip-browser-warning': 'true' }});
+                const result = await res.json();
+                if (result.status === 'success') {
+                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-success animate-ping-slow";
+                    document.getElementById('status-text').innerText = "远程链路: 在线同步中";
+                    updateUI(result);
                 }
             } catch (e) {
-                console.error("同步预警配置到 Python 后端失败:", e);
-                showToast("同步失败：无法连接后端", true);
+                console.error("UI 渲染或网络出错:", e);
+                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-warning";
+                document.getElementById('status-text').innerText = "链路异常 (详见 F12)";
             }
         }
 
@@ -292,65 +222,67 @@
             if(uidEl) uidEl.disabled = true;
             
             syncAlertsToBackend(); 
-
-            setInterval(async () => {
-                const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
-                try {
-                    const res = await fetch(`${baseUrl}/prices`, { headers: { 'ngrok-skip-browser-warning': 'true' }});
-                    const result = await res.json();
-                    if (result.status === 'success') {
-                        document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-success animate-ping-slow";
-                        document.getElementById('status-text').innerText = "远程链路: 在线同步中";
-                        updateUI(result);
-                    }
-                } catch (e) {
-                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-warning";
-                    document.getElementById('status-text').innerText = "链路异常";
-                }
-            }, 3000);
+            doFetch(); // 立即执行第一次抓取
+            setInterval(doFetch, 30000); // 之后每 30 秒抓一次，完美防卡死
         }
 
         function updateUI(result) {
             const listContainer = document.getElementById('price-list');
-            listContainer.innerHTML = "";
-            document.getElementById('item-count').innerText = result.data.length;
-            document.getElementById('sync-time').innerText = result.time;
+            if(listContainer) listContainer.innerHTML = "";
+            
+            // 安全注入，防止缺标签崩溃
+            if(document.getElementById('item-count')) document.getElementById('item-count').innerText = result.data.length;
+            if(document.getElementById('sync-time')) document.getElementById('sync-time').innerText = result.time;
 
-            // 1. 渲染列表并检查预警
+            let currentTriggered = null;
+
             result.data.forEach(item => {
-                let isAlert = userAlerts.some(a => item.name.includes(a.name) && item.price <= a.price);
-                listContainer.innerHTML += `
-                    <div class="flex items-center justify-between p-4 rounded-2xl border ${isAlert ? 'bg-alert/20 border-alert' : 'bg-white/5 border-white/5 hover:bg-white/10'}">
-                        <span class="text-sm font-black truncate ${isAlert ? 'text-alert' : 'text-slate-200'}">${item.name}</span>
-                        <div class="text-sm font-black font-mono ${isAlert ? 'text-alert' : 'text-success'}">¥${item.price.toFixed(2)}</div>
-                    </div>
-                `;
+                let isAlert = userAlerts.some(a => item.name && item.name.includes(a.name) && item.price <= a.price);
+                if(isAlert) currentTriggered = { name: item.name, price: item.price };
+                
+                if(listContainer) {
+                    listContainer.innerHTML += `
+                        <div class="flex items-center justify-between p-4 rounded-2xl border transition-all ${isAlert ? 'bg-alert/20 border-alert animate-shake' : 'bg-white/5 border-white/5 hover:bg-white/10'}">
+                            <div class="flex flex-col overflow-hidden">
+                                <span class="text-sm font-black truncate ${isAlert ? 'text-alert' : 'text-slate-200'}">${item.name}</span>
+                                <span class="text-[10px] font-mono text-slate-500 uppercase">${isAlert ? '⚠️ Buy Opportunity' : 'Real-time Floor'}</span>
+                            </div>
+                            <div class="text-sm font-black font-mono ${isAlert ? 'text-alert' : 'text-success'}">¥${item.price.toFixed(2)}</div>
+                        </div>
+                    `;
+                }
             });
 
-            // 2. 🌟 专业的“截断平均 (Trimmed Mean)”算法
+            // 专业的截断平均
             let prices = result.data.map(item => item.price).sort((a, b) => a - b);
             let avg = 0;
-            
             if (prices.length > 5) {
-                // 如果商品数量足够，去掉最高 10% 和最低 10% 的极端报价
                 let trimCount = Math.floor(prices.length * 0.1);
                 let validPrices = prices.slice(trimCount, prices.length - trimCount);
                 let sum = validPrices.reduce((a, b) => a + b, 0);
                 avg = sum / validPrices.length;
-                console.log(`[指数平滑] 总数:${prices.length}, 去除极端值:${trimCount*2}个, 采用核心筹码:${validPrices.length}个`);
             } else {
-                // 商品太少就直接算普通平均
                 let sum = prices.reduce((a, b) => a + b, 0);
                 avg = prices.length > 0 ? sum / prices.length : 0;
             }
 
-            document.getElementById('avg-price').innerText = avg.toFixed(2);
+            if(document.getElementById('avg-price')) document.getElementById('avg-price').innerText = avg.toFixed(2);
             
-            // 3. 更新图表
+            if (currentTriggered) {
+                if(document.getElementById('global-alert')) document.getElementById('global-alert').classList.remove('hidden');
+                if(document.getElementById('alert-detail')) document.getElementById('alert-detail').innerText = `${currentTriggered.name} | 当前: ¥${currentTriggered.price}`;
+                if(!soundActive && document.getElementById('alert-audio')) { document.getElementById('alert-audio').play().catch(() => {}); soundActive = true; }
+                alertCount++;
+                if(document.getElementById('alert-stat')) document.getElementById('alert-stat').innerText = alertCount;
+            } else {
+                if(document.getElementById('global-alert')) document.getElementById('global-alert').classList.add('hidden');
+                soundActive = false;
+            }
+
             priceHistory.push(avg); 
             labels.push("");
             if(priceHistory.length > 20) { priceHistory.shift(); labels.shift(); }
-            chartInstance.update();
+            if(chartInstance) chartInstance.update();
         }
 
         function addAlert() {
@@ -372,8 +304,7 @@
         }
 
         function renderAlertTags() {
-            const container = document.getElementById('active-alerts');
-            container.innerHTML = userAlerts.map((a, i) => `
+            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `
                 <div class="bg-brand/10 border border-brand/40 px-4 py-2 rounded-xl flex items-center gap-3">
                     <span class="text-xs font-black text-white italic">${a.name} < ¥${a.price}</span>
                     <i class="ph ph-trash text-slate-500 hover:text-alert cursor-pointer" onclick="removeAlert(${i})"></i>
@@ -384,9 +315,15 @@
         function dismissGlobalAlert() {
             document.getElementById('global-alert').classList.add('hidden');
             const audio = document.getElementById('alert-audio');
-            audio.pause();
-            audio.currentTime = 0;
+            if(audio) { audio.pause(); audio.currentTime = 0; }
             soundActive = false;
+        }
+
+        function initChart() {
+            chartInstance = new Chart(document.getElementById('mainChart').getContext('2d'), {
+                type: 'line', data: { labels: labels, datasets: [{ data: priceHistory, borderColor: '#3b82f6', borderWidth: 4, tension: 0.4, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: 'rgba(255,255,255,0.03)' } } } }
+            });
         }
 
         window.onload = () => {
@@ -398,10 +335,7 @@
             if(savedUrl) document.getElementById('api-url').value = savedUrl;
             if(savedUid && document.getElementById('user-uid')) document.getElementById('user-uid').value = savedUid;
             if(savedAlerts) {
-                try {
-                    userAlerts = JSON.parse(savedAlerts);
-                    renderAlertTags();
-                } catch(e) {}
+                try { userAlerts = JSON.parse(savedAlerts); renderAlertTags(); } catch(e) {}
             }
         };
     </script>
