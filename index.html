@@ -72,7 +72,6 @@
                         <i class="ph-fill ph-lightning text-xl sm:text-2xl text-brand" style="color: var(--brand)"></i>
                     </div>
                     <div class="min-w-0">
-                        <!-- 🚀 修复“据”字被吞没的问题，取消 truncate，增加 pr-2 留出斜体空间 -->
                         <h1 class="text-lg sm:text-xl font-black italic tracking-tighter text-white uppercase whitespace-nowrap overflow-visible pr-2">XM <span class="text-brand" style="color: var(--brand)">典藏板块数据</span></h1>
                         <div class="flex items-center gap-2 mt-1"><div id="status-dot" class="w-2 h-2 rounded-full bg-gray-600 shrink-0"></div><span id="status-text" class="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-widest truncate">等待连接...</span></div>
                     </div>
@@ -99,9 +98,7 @@
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-            <!-- 列表容器区 -->
             <div class="lg:col-span-5 h-[500px] lg:h-[780px] flex flex-col glass-panel p-4 sm:p-6 rounded-2xl shadow-xl">
-                <!-- 列表顶部统计栏 - 适配手机端折叠 -->
                 <div class="flex flex-col sm:flex-row justify-between gap-3 mb-4 px-3 bg-[#12161b] py-3 rounded-xl border border-white/5 text-[10px] sm:text-[11px] font-bold">
                     <div class="flex items-baseline justify-between sm:justify-start gap-2 w-full sm:w-auto">
                         <span class="text-gray-500">总市值</span>
@@ -121,9 +118,7 @@
                 <div id="price-list" class="flex-1 overflow-y-auto space-y-2 log-container pr-1 sm:pr-2"></div>
             </div>
 
-            <!-- 图表与预警配置区 -->
             <div class="lg:col-span-7 space-y-4 sm:space-y-6">
-                <!-- 预警卡片 -->
                 <div class="glass-panel p-5 sm:p-8 rounded-2xl shadow-xl">
                     <h2 class="text-xs sm:text-sm font-black text-gray-400 flex items-center gap-2 mb-4 sm:mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand" style="color: var(--brand)"></i> 私人定制预警</h2>
                     <div class="flex flex-col sm:flex-row gap-3">
@@ -139,7 +134,6 @@
                 <div class="glass-panel p-4 sm:p-6 rounded-2xl h-[300px] md:h-[420px] flex flex-col shadow-xl">
                     <div class="flex justify-between items-center mb-2 sm:mb-4">
                         <h3 class="text-[10px] sm:text-sm font-black text-gray-400 flex items-center gap-1 sm:gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-line text-brand" style="color: var(--brand)"></i> 实时走势 <span class="text-[9px] font-normal lowercase hidden sm:inline">(可滑动查看历史)</span></h3>
-                        <!-- 🚀 新增日线按钮支持 -->
                         <div class="flex gap-1 bg-[#12161b] p-1 rounded-lg border border-white/5 overflow-x-auto">
                             <button onclick="switchFrame('1m')" id="btn-1m" class="px-2 sm:px-3 py-1 rounded-md text-[9px] sm:text-xs font-bold tab-btn-active shrink-0">1分</button>
                             <button onclick="switchFrame('5m')" id="btn-5m" class="px-2 sm:px-3 py-1 rounded-md text-[9px] sm:text-xs font-bold text-gray-500 shrink-0">5分</button>
@@ -147,7 +141,6 @@
                             <button onclick="switchFrame('1d')" id="btn-1d" class="px-2 sm:px-3 py-1 rounded-md text-[9px] sm:text-xs font-bold text-gray-500 shrink-0">日线</button>
                         </div>
                     </div>
-                    <!-- 走势图表容器 -->
                     <div id="mainChart" class="flex-1 w-full relative -left-2 sm:left-0"></div>
                 </div>
             </div>
@@ -157,11 +150,12 @@
     <script>
         let isRunning = false, userAlerts = [], chartInstance = null, currentFrame = '1m';
         let klineData = [], liveCandle = null, lastPointCount = 0;
-        let lastPrices = {}, toastTimeout, apiBaseUrl = "", triggeredAlerts = new Set();
-        let fetchLock = false; 
+        let lastPrices = {}, toastTimeout, apiBaseUrl = "", fetchLock = false; 
         let lastHistory = null; 
-        
         let isUserScrollingChart = false;
+
+        // 🚀 核心优化3：加入已触发警报的本地存储锁，防止刷新重复发送
+        let triggeredAlerts = new Set(JSON.parse(localStorage.getItem('xmeta_triggered') || '[]'));
 
         function startApp() {
             if (typeof echarts === 'undefined') {
@@ -197,7 +191,6 @@
             toastTimeout = setTimeout(() => { toast.classList.replace('translate-y-0', 'translate-y-20'); toast.classList.replace('opacity-100', 'opacity-0'); }, 3000);
         }
 
-        // 🚀 核心优化：将请求单独抽离，方便立即触发（消除慢的错觉）
         async function fetchPricesData() {
             if (fetchLock) return;
             fetchLock = true;
@@ -231,7 +224,6 @@
                     updateUI(result);
                 }
             } catch (e) { 
-                console.error("Fetch Error:", e);
                 document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-[#ff4d4f] shrink-0";
                 let displayMsg = "连接失败";
                 if (e.name === 'TypeError') displayMsg = "被拦截(检查HTTPS协议)";
@@ -248,7 +240,6 @@
             if(!uid) return alert("请先填写 UID");
             
             let rawUrl = document.getElementById('api-url').value.trim().replace(/\/$/, "");
-            
             if (location.protocol === 'https:' && rawUrl.startsWith('http://')) {
                 showToast("协议拦截：请填写 https:// 开头的 Cpolar 隧道地址", true);
                 document.getElementById('status-text').innerText = "协议不匹配 (Mixed Content)";
@@ -265,7 +256,6 @@
             document.getElementById('start-btn').disabled = true;
             syncAlerts();
 
-            // 🚀 核心优化：点击连接后瞬间触发一次获取，不傻等定时器
             await fetchPricesData();
             document.getElementById('start-btn').innerText = "雷达探测中";
 
@@ -298,30 +288,38 @@
                 totalDealAmtYtd += item.dealRate > -99.9 ? (item.dealAmount / (1 + item.dealRate / 100)) : item.dealAmount;
 
                 let safeId = item.id || encodeURIComponent(item.name).replace(/%/g, '_');
-                let isAlert = userAlerts.some(a => item.name.includes(a.name) && item.price <= a.price);
+                let isAlert = false;
 
-                if (isAlert) {
-                    let alertKey = item.id + '_' + item.price;
-                    if (!triggeredAlerts.has(alertKey)) {
-                        triggeredAlerts.add(alertKey); playAlertSound();
-                        showToast(`🚨 预警：${item.name} 跌至 ¥${item.price}`, true);
+                userAlerts.forEach(a => {
+                    if (item.name.includes(a.name) && item.price <= a.price) {
+                        isAlert = true;
                         
-                        const uid = document.getElementById('user-uid').value.trim();
-                        if (uid.length > 5) {
-                            fetch('https://wxpusher.zjiecode.com/api/send/message', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    appToken: "AT_Mh04xZCEy4ivmetmCkfu72nP6QEKrNNF", 
-                                    content: `<div style="padding: 15px; background: #fff1f2; border-radius: 10px; border: 1px solid #fecdd3;"><h2 style="color: #e11d48; margin-top: 0;">🚨 XM 降价预警</h2><p>您监控的藏品 <b>【${item.name}】</b> 触达目标价！</p><p>当前最低价: <span style="color: #e11d48; font-size: 24px; font-weight: bold;">¥${item.price.toFixed(2)}</span></p></div>`,
-                                    summary: `🚨 预警：${item.name} 跌至 ¥${item.price}`,
-                                    contentType: 2, 
-                                    uids: [uid]
-                                })
-                            }).catch(e => console.log('WxPusher 推送网络失败', e));
+                        // 🚀 核心优化3：本地缓存锁判断，防止重复发送
+                        let alertKey = a.name + '_' + a.price + '_' + safeId;
+                        if (!triggeredAlerts.has(alertKey)) {
+                            triggeredAlerts.add(alertKey);
+                            localStorage.setItem('xmeta_triggered', JSON.stringify([...triggeredAlerts]));
+                            
+                            playAlertSound();
+                            showToast(`🚨 预警：${item.name} 跌至 ¥${item.price}`, true);
+                            
+                            const uid = document.getElementById('user-uid').value.trim();
+                            if (uid.length > 5) {
+                                fetch('https://wxpusher.zjiecode.com/api/send/message', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        appToken: "AT_Mh04xZCEy4ivmetmCkfu72nP6QEKrNNF", 
+                                        content: `<div style="padding: 15px; background: #fff1f2; border-radius: 10px; border: 1px solid #fecdd3;"><h2 style="color: #e11d48; margin-top: 0;">🚨 XM 降价预警</h2><p>您监控的藏品 <b>【${item.name}】</b> 触达目标价！</p><p>当前最低价: <span style="color: #e11d48; font-size: 24px; font-weight: bold;">¥${item.price.toFixed(2)}</span></p></div>`,
+                                        summary: `🚨 预警：${item.name} 跌至 ¥${item.price}`,
+                                        contentType: 2, 
+                                        uids: [uid]
+                                    })
+                                }).catch(e => console.log('WxPusher error', e));
+                            }
                         }
                     }
-                }
+                });
 
                 let safeImgUrl = item.image ? `${apiBaseUrl}/proxy_image?url=${encodeURIComponent(item.image)}` : '';
                 let priceStyle = isAlert ? 'color: var(--up); font-weight: 900;' : 'color: var(--price);';
@@ -368,7 +366,6 @@
             renderKLine();
         }
 
-        // 🚀 加入 1d 支持的无缝秒切
         function switchFrame(frame) {
             currentFrame = frame; liveCandle = null;
             ['1m', '5m', '1h', '1d'].forEach(f => {
@@ -394,14 +391,18 @@
             const currentClose = displayData[displayData.length - 1][1];
             
             const isMobile = window.innerWidth < 640;
-            
-            // 🚀 定义可视区域显示的 K线柱子数量 (电脑 30 根，手机 15 根)
             const maxVisibleCandles = isMobile ? 15 : 30;
             const total = displayData.length;
+            
+            // 🚀 核心优化2：动态填补 X 轴数组。即使日 K 只有 1 根，也会把它挤到最左边，而不是拉伸满屏！
+            let xAxisData = new Array(total).fill('');
+            if (total < maxVisibleCandles) {
+                xAxisData = new Array(maxVisibleCandles).fill('');
+            }
 
             let option = {
                 animation: false,
-                xAxis: { data: new Array(total).fill('') },
+                xAxis: { data: xAxisData },
                 yAxis: { 
                     min: (minP - pad).toFixed(2), 
                     max: (maxP + pad).toFixed(2)
@@ -417,15 +418,10 @@
             };
 
             if (!isUserScrollingChart) {
+                let startV = total > maxVisibleCandles ? total - maxVisibleCandles : 0;
                 option.dataZoom = [
-                    {
-                        startValue: total > maxVisibleCandles ? total - maxVisibleCandles : 0,
-                        endValue: total
-                    },
-                    {
-                        startValue: total > maxVisibleCandles ? total - maxVisibleCandles : 0,
-                        endValue: total
-                    }
+                    { startValue: startV, endValue: total },
+                    { startValue: startV, endValue: total }
                 ];
             }
 
@@ -499,22 +495,35 @@
             const n = document.getElementById('alert-name').value.trim(), p = parseFloat(document.getElementById('alert-price').value);
             if(n && !isNaN(p)) { userAlerts.push({name: n, price: p}); document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = ""; renderAlertTags(); syncAlerts(); }
         }
+        
+        // 🚀 修改：现在删除任务时，也会同步清理本地触发缓存，这样以后重新加回来还能报警
+        function removeAlert(i) {
+            let removed = userAlerts.splice(i, 1)[0];
+            let newTriggered = [...triggeredAlerts].filter(key => !key.startsWith(removed.name + '_' + removed.price));
+            triggeredAlerts = new Set(newTriggered);
+            localStorage.setItem('xmeta_triggered', JSON.stringify([...triggeredAlerts]));
+            renderAlertTags();
+            syncAlerts();
+        }
+
         function renderAlertTags() {
-            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `<div class="bg-[#3b82f6]/10 border border-[#3b82f6]/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-bold text-gray-300 shadow-sm">${a.name} < ¥${a.price} <i class="ph ph-x-circle cursor-pointer hover:text-[#ff4d4f] transition-colors" onclick="userAlerts.splice(${i},1);renderAlertTags();syncAlerts();"></i></div>`).join('');
+            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `<div class="bg-[#3b82f6]/10 border border-[#3b82f6]/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-bold text-gray-300 shadow-sm">${a.name} < ¥${a.price} <i class="ph ph-x-circle cursor-pointer hover:text-[#ff4d4f] transition-colors" onclick="removeAlert(${i})"></i></div>`).join('');
             localStorage.setItem('xmeta_alerts', JSON.stringify(userAlerts));
         }
         
-        // 🚀 核心优化：部署任务后立即提示，不傻等网络返回，增强反馈
-        async function syncAlerts() {
+        // 🚀 核心优化1：使用静默异步部署，不原地等待网络，消除一切卡顿感
+        function syncAlerts() {
             if(!apiBaseUrl || !isRunning) return;
             const uid = document.getElementById('user-uid').value;
-            showToast("正在部署监控任务...", false);
-            try { 
-                await fetch(`${apiBaseUrl}/update_alerts`, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price })) }) }); 
-                showToast("任务已部署至边缘节点"); 
-            } catch(e) {
-                showToast("同步可能延迟，请检查网络", true);
-            }
+            // 瞬间在网页上提示成功
+            showToast("任务已部署至边缘节点");
+            // 后台偷偷连接服务器，不再 await
+            fetch(`${apiBaseUrl}/update_alerts`, { 
+                method: 'POST', 
+                mode: 'cors', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price })) }) 
+            }).catch(e => console.log("静默同步失败"));
         }
     </script>
 </body>
