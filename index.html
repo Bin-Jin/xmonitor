@@ -7,6 +7,12 @@
     <meta name="referrer" content="no-referrer">
     
     <title>XMeta 典藏行情终端 Pro Max</title>
+    
+    <!-- 🚀 核心修复 1：引入真正的顶级无衬线字体 Inter，确保全浏览器显示绝对一致 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -14,7 +20,27 @@
         tailwind.config = { darkMode: 'class', theme: { extend: { colors: { bgDark: '#12161b', cardDark: '#1a1e24', brand: '#3b82f6', price: '#00d8a6', up: '#ff4d4f', down: '#00d8a6' } } } }
     </script>
     <style>
-        body { background-color: #12161b; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body { 
+            background-color: #12161b; 
+            color: #e2e8f0; 
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            overflow-x: hidden; 
+            /* 🚀 核心修复 2：开启高级字体抗锯齿平滑渲染 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* 🚀 核心修复 3：强行干掉 Edge 输入框自带的清除小叉号和密码框眼睛，防止布局错位 */
+        input::-ms-clear, input::-ms-reveal { display: none; }
+        
+        /* 🚀 核心修复 4：强行干掉所有浏览器自带的数字输入框上下小箭头 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] { -moz-appearance: textfield; }
+
         .glass-panel { background: #1a1e24; border: 1px solid rgba(255, 255, 255, 0.05); }
         .log-container::-webkit-scrollbar { width: 4px; }
         .log-container::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 10px; }
@@ -91,7 +117,7 @@
 
             <div class="lg:col-span-7 space-y-6">
                 <div class="glass-panel p-8 rounded-2xl">
-                    <h2 class="text-sm font-black text-gray-300 flex items-center gap-2 mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand"></i> 藏品价额预警</h2>
+                    <h2 class="text-sm font-black text-gray-300 flex items-center gap-2 mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand"></i> 私人定制预警</h2>
                     <div class="flex gap-4">
                         <input id="alert-name" type="text" placeholder="关键字..." class="flex-1 bg-[#12161b] border border-white/5 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-brand">
                         <input id="alert-price" type="number" placeholder="价格" class="w-32 bg-[#12161b] border border-white/5 rounded-lg px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-brand">
@@ -102,7 +128,7 @@
 
                 <div class="glass-panel p-6 rounded-2xl h-[420px] flex flex-col">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-black text-gray-300 flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-bar text-brand"></i> 实时走势 </h3>
+                        <h3 class="text-sm font-black text-gray-300 flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-bar text-brand"></i> 实时走势 (单柱独立版)</h3>
                         <div class="flex gap-1 bg-[#12161b] p-1 rounded-lg border border-white/5">
                             <button onclick="switchFrame('1m')" id="btn-1m" class="px-3 py-1 rounded-md text-xs font-bold tab-btn-active transition-all">1分</button>
                             <button onclick="switchFrame('5m')" id="btn-5m" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 transition-all">5分</button>
@@ -121,6 +147,7 @@
         let klineData = [], liveCandle = null, lastPointCount = 0;
         let lastPrices = {}, toastTimeout;
         let apiBaseUrl = "http://127.0.0.1:5000"; 
+        let triggeredAlerts = new Set(); // 记录已在大屏发声报警的藏品防重复
 
         window.onload = () => {
             initChart();
@@ -129,10 +156,25 @@
             if(localStorage.getItem('xmeta_alerts')) { userAlerts = JSON.parse(localStorage.getItem('xmeta_alerts')); renderAlertTags(); }
         };
 
-        function showToast(msg) {
+        // 纯 JS 生成的高频警报音效
+        function playAlertSound() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, ctx.currentTime);
+            gain.gain.setValueAtTime(1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.5);
+        }
+
+        function showToast(msg, isWarning=false) {
             const toast = document.getElementById('toast-msg');
             document.getElementById('toast-text').innerText = msg;
-            toast.className = `fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 bg-brand text-white px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none`;
+            toast.className = `fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 ${isWarning ? 'bg-up' : 'bg-brand'} text-white px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none`;
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => { toast.classList.replace('translate-y-0', 'translate-y-20'); toast.classList.replace('opacity-100', 'opacity-0'); }, 3000);
         }
@@ -196,6 +238,15 @@
                 let safeId = item.id || encodeURIComponent(item.name).replace(/%/g, '_');
                 let row = document.getElementById('row-' + safeId);
                 let isAlert = userAlerts.some(a => item.name.includes(a.name) && item.price <= a.price);
+
+                if (isAlert) {
+                    let alertKey = item.id + '_' + item.price;
+                    if (!triggeredAlerts.has(alertKey)) {
+                        triggeredAlerts.add(alertKey);
+                        playAlertSound();
+                        showToast(`🚨 预警触发：${item.name} 跌至 ¥${item.price}`, true);
+                    }
+                }
 
                 let safeImgUrl = item.image ? `${apiBaseUrl}/proxy_image?url=${encodeURIComponent(item.image)}` : '';
 
@@ -308,7 +359,6 @@
                     trigger: 'axis', axisPointer: { type: 'cross' }, 
                     backgroundColor: 'rgba(18,22,27,0.95)', borderColor: '#3b82f6', textStyle: { color: '#fff', fontSize: 11 }, 
                     formatter: p => { 
-                        // 🚨 核心修复：改用 p[0].value 准确避开 ECharts 内部插队的序号
                         let v = p[0].value; 
                         let open = v[1], close = v[2], lowest = v[3], highest = v[4];
                         let up = close >= open;
