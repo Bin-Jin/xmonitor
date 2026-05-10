@@ -119,7 +119,7 @@
 
             <div class="lg:col-span-7 space-y-4 sm:space-y-6">
                 <div class="glass-panel p-5 sm:p-8 rounded-2xl shadow-xl">
-                    <h2 class="text-xs sm:text-sm font-black text-gray-400 flex items-center gap-2 mb-4 sm:mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand" style="color: var(--brand)"></i> 私人定制预警</h2>
+                    <h2 class="text-xs sm:text-sm font-black text-gray-400 flex items-center gap-2 mb-4 sm:mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand" style="color: var(--brand)"></i> 藏品价格预警</h2>
                     <div class="flex flex-col sm:flex-row gap-3">
                         <input id="alert-name" type="text" placeholder="关键字..." class="w-full sm:flex-1 bg-[#12161b] border border-white/5 rounded-xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white focus:border-brand">
                         <div class="flex gap-2 sm:gap-4 w-full sm:w-auto">
@@ -151,9 +151,11 @@
         let klineData = [], liveCandle = null, lastPointCount = 0;
         let lastPrices = {}, toastTimeout, apiBaseUrl = "", fetchLock = false; 
         let lastHistory = null; 
+        let lastResultData = null; // 🚀 保存最近一次全局数据，方便瞬间验证预警
         let isUserScrollingChart = false;
 
-        let triggeredAlerts = new Set(JSON.parse(localStorage.getItem('xmeta_triggered') || '[]'));
+        // 🚀 核心优化3：完全抛弃 LocalStorage 记忆任务，每次刷新网页回归白板
+        let triggeredAlerts = new Set(); 
 
         function startApp() {
             if (typeof echarts === 'undefined') {
@@ -163,7 +165,7 @@
             initChart();
             if(localStorage.getItem('xmeta_url')) document.getElementById('api-url').value = localStorage.getItem('xmeta_url');
             if(localStorage.getItem('xmeta_uid')) document.getElementById('user-uid').value = localStorage.getItem('xmeta_uid');
-            if(localStorage.getItem('xmeta_alerts')) { userAlerts = JSON.parse(localStorage.getItem('xmeta_alerts')); renderAlertTags(); }
+            // 注意：不再从 localStorage 加载 userAlerts，保持空白
         }
 
         window.onload = startApp;
@@ -193,7 +195,6 @@
             if (fetchLock) return;
             fetchLock = true;
 
-            // 🚀 核心优化1：增加 5 秒超时强制熔断机制，防止 Cpolar 丢包导致长达2分钟的“假死”
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -220,6 +221,7 @@
                     document.getElementById('status-text').innerText = "数据同步中";
                     
                     lastHistory = result.history; 
+                    lastResultData = result; // 🚀 更新最近一帧数据
 
                     if (result.history && result.history[currentFrame]) {
                         const newHistory = result.history[currentFrame];
@@ -263,11 +265,8 @@
             document.getElementById('start-btn').disabled = true;
             syncAlerts();
 
-            // 🚀 这里去掉了 await，不再阻塞 UI 按钮的变化
             fetchPricesData();
             document.getElementById('start-btn').innerText = "雷达探测中";
-
-            // 🚀 恢复到 2000 毫秒 (2秒)，避免请求过于密集触发 Cpolar 免费版限制
             setInterval(fetchPricesData, 2000);
         }
 
@@ -306,7 +305,6 @@
                         let alertKey = a.name + '_' + a.price + '_' + safeId;
                         if (!triggeredAlerts.has(alertKey)) {
                             triggeredAlerts.add(alertKey);
-                            localStorage.setItem('xmeta_triggered', JSON.stringify([...triggeredAlerts]));
                             
                             playAlertSound();
                             showToast(`🚨 预警：${item.name} 跌至 ¥${item.price}`, true);
@@ -385,7 +383,6 @@
                 klineData = lastHistory[frame];
                 lastPointCount = klineData.length;
             } else {
-                // 🚀 核心优化2：如果切换过去的周期没有数据（比如日K还没生成），必须强制清空本地变量！
                 klineData = [];
                 lastPointCount = 0;
             }
@@ -398,7 +395,6 @@
                 displayData.push([parseFloat(liveCandle[0].toFixed(2)), parseFloat(liveCandle[1].toFixed(2)), parseFloat(liveCandle[2].toFixed(2)), parseFloat(liveCandle[3].toFixed(2))]);
             }
 
-            // 🚀 核心优化2补充：如果强制清空后，数组为空，需要给 ECharts 下发清除指令，否则会残留老画面
             if (!displayData.length) {
                 if (chartInstance) {
                     chartInstance.setOption({ xAxis: { data: [] }, series: [{ data: [], markLine: { data: [] } }] });
@@ -407,7 +403,9 @@
             }
 
             if (!chartInstance) return;
-            const allValues = displayData.flatMap(d => d);
+            // 过滤掉为了占位用的空数据 '-'，用来准确计算最高最低价
+            const validData = displayData.filter(d => d !== '-');
+            const allValues = validData.flatMap(d => d);
             const minP = Math.min(...allValues), maxP = Math.max(...allValues), pad = (maxP - minP) * 0.1 || 0.2;
             const currentClose = displayData[displayData.length - 1][1];
             
@@ -416,8 +414,14 @@
             const total = displayData.length;
             
             let xAxisData = new Array(total).fill('');
+            let renderData = displayData;
+
+            // 🚀 核心优化1：如果数据条数不足（比如日线刚生成只有1根），在左侧用空白柱子挤压它
             if (total < maxVisibleCandles) {
                 xAxisData = new Array(maxVisibleCandles).fill('');
+                let padCount = maxVisibleCandles - total;
+                let padArr = new Array(padCount).fill('-'); 
+                renderData = padArr.concat(displayData);
             }
 
             let option = {
@@ -428,7 +432,7 @@
                     max: (maxP + pad).toFixed(2)
                 },
                 series: [{ 
-                    animation: false, animationDurationUpdate: 0, data: displayData, 
+                    animation: false, animationDurationUpdate: 0, data: renderData, 
                     markLine: { 
                         symbol: ['none', 'none'], data: [{ yAxis: currentClose }], animation: false, 
                         lineStyle: { color: '#ff4d4f', type: 'dashed', width: 1.5, cap: 'butt' }, 
@@ -438,10 +442,11 @@
             };
 
             if (!isUserScrollingChart) {
-                let startV = total > maxVisibleCandles ? total - maxVisibleCandles : 0;
+                let startV = renderData.length > maxVisibleCandles ? renderData.length - maxVisibleCandles : 0;
+                let endV = renderData.length;
                 option.dataZoom = [
-                    { startValue: startV, endValue: total },
-                    { startValue: startV, endValue: total }
+                    { startValue: startV, endValue: endV },
+                    { startValue: startV, endValue: endV }
                 ];
             }
 
@@ -463,7 +468,7 @@
                     formatter: p => { 
                         if (!p || !p[0]) return '';
                         let k = p[0].data; 
-                        if(!k) return '';
+                        if(!k || k === '-') return '';
                         let up = k[1] >= k[0];
                         return `<div class='p-1'><div class='font-bold text-gray-400 mb-1 sm:mb-2 border-b border-white/10 flex justify-between gap-4 sm:gap-8'><span>行情详情</span><span class='${up?'text-[#ff4d4f]':'text-[#00d8a6]'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-4 sm:gap-6 mb-0.5 sm:mb-1'>开盘<span>¥${k[0].toFixed(2)}</span></div><div class='flex justify-between gap-4 sm:gap-6 mb-0.5 sm:mb-1'>收盘<span class='${up?'text-[#ff4d4f]':'text-[#00d8a6]'} font-bold'>¥${k[1].toFixed(2)}</span></div><div class='flex justify-between gap-4 sm:gap-6 mb-0.5 sm:mb-1'>最低<span>¥${k[2].toFixed(2)}</span></div><div class='flex justify-between gap-4 sm:gap-6'>最高<span>¥${k[3].toFixed(2)}</span></div></div>` 
                     } 
@@ -514,21 +519,30 @@
 
         function addAlert() {
             const n = document.getElementById('alert-name').value.trim(), p = parseFloat(document.getElementById('alert-price').value);
-            if(n && !isNaN(p)) { userAlerts.push({name: n, price: p}); document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = ""; renderAlertTags(); syncAlerts(); }
+            if(n && !isNaN(p)) { 
+                userAlerts.push({name: n, price: p}); 
+                document.getElementById('alert-name').value = ""; 
+                document.getElementById('alert-price').value = ""; 
+                renderAlertTags(); 
+                syncAlerts(); 
+                
+                // 🚀 核心优化2：加入此判断，点击部署后立马拿最新的内存数据对对碰，触发秒发报警
+                if (lastResultData) {
+                    updateUI(lastResultData);
+                }
+            }
         }
         
         function removeAlert(i) {
             let removed = userAlerts.splice(i, 1)[0];
             let newTriggered = [...triggeredAlerts].filter(key => !key.startsWith(removed.name + '_' + removed.price));
             triggeredAlerts = new Set(newTriggered);
-            localStorage.setItem('xmeta_triggered', JSON.stringify([...triggeredAlerts]));
             renderAlertTags();
             syncAlerts();
         }
 
         function renderAlertTags() {
             document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `<div class="bg-[#3b82f6]/10 border border-[#3b82f6]/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-bold text-gray-300 shadow-sm">${a.name} < ¥${a.price} <i class="ph ph-x-circle cursor-pointer hover:text-[#ff4d4f] transition-colors" onclick="removeAlert(${i})"></i></div>`).join('');
-            localStorage.setItem('xmeta_alerts', JSON.stringify(userAlerts));
         }
         
         function syncAlerts() {
