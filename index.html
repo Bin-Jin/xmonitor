@@ -3,28 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 🚨 双重防盗链破解指令 🚨 -->
+    <meta name="referrer" content="no-referrer">
+    
     <title>XMeta 典藏行情终端 Pro Max</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script>
-        tailwind.config = { 
-            darkMode: 'class', 
-            theme: { 
-                extend: { 
-                    colors: { 
-                        bgDark: '#12161b',     
-                        cardDark: '#1a1e24',   
-                        brand: '#3b82f6', 
-                        price: '#00d8a6',      
-                        up: '#ff4d4f',         
-                        down: '#00d8a6'        
-                    } 
-                } 
-            } 
-        }
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { bgDark: '#12161b', cardDark: '#1a1e24', brand: '#3b82f6', price: '#00d8a6', up: '#ff4d4f', down: '#00d8a6' } } } }
     </script>
-    <style>body { background-color: #12161b; color: #e2e8f0; font-family: 'Inter', sans-serif; } .glass-panel { background: #1a1e24; border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.3); } .log-container::-webkit-scrollbar { width: 4px; } .log-container::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 10px; }</style>
+    <style>
+        body { background-color: #12161b; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .glass-panel { background: #1a1e24; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .log-container::-webkit-scrollbar { width: 4px; }
+        .log-container::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 10px; }
+        .tab-btn-active { background: rgba(255,255,255,0.1); color: white; }
+        @keyframes up-flash { 0% { background-color: rgba(255,77,79,0.2); } 100% { background-color: transparent; } }
+        @keyframes down-flash { 0% { background-color: rgba(0,216,166,0.2); } 100% { background-color: transparent; } }
+        .flash-up { animation: up-flash 0.8s ease-out; }
+        .flash-down { animation: down-flash 0.8s ease-out; }
+        .item-img { transition: transform 0.3s ease; }
+        .item-row:hover .item-img { transform: scale(1.15); }
+    </style>
 </head>
 <body class="min-h-screen p-4 md:p-6 lg:p-8">
     
@@ -40,85 +41,73 @@
                         <i class="ph-fill ph-shield-check text-2xl text-brand"></i>
                     </div>
                     <div>
-                        <h1 class="text-xl font-black italic tracking-tighter text-white uppercase">XMeta <span class="text-brand">Radar</span></h1>
-                        <div class="flex items-center gap-2"><div id="status-dot" class="w-2 h-2 rounded-full bg-gray-500"></div><span id="status-text" class="text-[10px] font-mono text-gray-400 uppercase tracking-widest">等待链路配置...</span></div>
+                        <h1 class="text-xl font-black italic tracking-tighter text-white uppercase">XMeta <span class="text-brand">Radar</span> Pro</h1>
+                        <div class="flex items-center gap-2"><div id="status-dot" class="w-2 h-2 rounded-full bg-gray-500"></div><span id="status-text" class="text-[10px] font-mono text-gray-400 uppercase tracking-widest">等待连接...</span></div>
                     </div>
                 </div>
-                
                 <div class="mt-6 space-y-3">
-                    <div>
-                        <input id="user-uid" type="text" placeholder="专属推送标识 (WxPusher UID)" class="w-full bg-[#12161b] border border-white/5 rounded-lg px-4 py-2 text-xs text-white font-mono focus:outline-none focus:border-brand">
-                    </div>
+                    <input id="user-uid" type="text" placeholder="WxPusher UID (降价提醒)" class="w-full bg-[#12161b] border border-white/5 rounded-lg px-4 py-2 text-xs text-white focus:outline-none focus:border-brand font-mono">
                     <div class="flex gap-2">
                         <input id="api-url" type="text" placeholder="http://127.0.0.1:5000" class="flex-1 bg-[#12161b] border border-white/5 rounded-lg px-4 py-2 text-xs text-white focus:outline-none focus:border-brand">
-                        <button onclick="toggleMonitor()" id="start-btn" class="bg-brand hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all">连接</button>
+                        <button onclick="toggleMonitor()" id="start-btn" class="bg-brand text-white px-4 py-2 rounded-lg text-xs font-bold transition-all hover:bg-blue-600 shadow-lg">连接雷达</button>
                     </div>
                 </div>
             </div>
 
             <div class="lg:col-span-2 glass-panel p-8 rounded-2xl border-t-2 border-brand flex flex-col md:flex-row items-center gap-10">
                 <div class="flex-1">
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="ph-bold ph-globe"></i> 典藏均价指数</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="ph-bold ph-globe"></i> 典藏均价实时指数</p>
                     <div class="flex items-baseline gap-4"><span id="avg-price" class="text-5xl font-black text-white font-mono tracking-tighter">0.00</span></div>
                 </div>
                 <div class="grid grid-cols-2 gap-8 border-l border-white/5 pl-10 h-full py-2">
                     <div><p class="text-[10px] text-gray-500 font-bold uppercase mb-1">监控项目数</p><p id="item-count" class="text-xl font-bold text-white font-mono">0</p></div>
-                    <div><p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Last Sync</p><p id="sync-time" class="text-xl font-bold text-brand font-mono">--:--:--</p></div>
+                    <div><p class="text-[10px] text-gray-500 font-bold uppercase mb-1">最后同步</p><p id="sync-time" class="text-xl font-bold text-brand font-mono">--:--:--</p></div>
                 </div>
             </div>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-5 h-[760px] flex flex-col glass-panel p-6 rounded-2xl">
-                <!-- 🎯 全局统计栏 (官方排版复刻) -->
-                <div class="flex items-center gap-6 mb-4 px-2 bg-[#12161b] py-3 rounded-lg border border-white/5">
-                    <div class="flex items-baseline gap-1.5">
-                        <span class="text-[11px] text-gray-400">总市值</span>
+            <div class="lg:col-span-5 h-[780px] flex flex-col glass-panel p-6 rounded-2xl">
+                <div class="flex items-center gap-6 mb-4 px-2 bg-[#12161b] py-3 rounded-lg border border-white/5 shadow-inner">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-[11px] text-gray-400 font-bold">总市值</span>
                         <span id="global-market-rate"></span>
                         <span id="global-market-val" class="text-sm font-black text-price font-mono">¥0</span>
                     </div>
-                    <div class="flex items-baseline gap-1.5 border-l border-white/10 pl-6">
-                        <span class="text-[11px] text-gray-400">交易量</span>
+                    <div class="flex items-baseline gap-2 border-l border-white/10 pl-6">
+                        <span class="text-[11px] text-gray-400 font-bold">交易量</span>
                         <span id="global-deal-rate"></span>
                         <span id="global-deal-val" class="text-sm font-black text-price font-mono">0</span>
                     </div>
                 </div>
 
-                <div class="flex justify-between items-end mb-4 border-b border-white/5 pb-2 px-2">
-                    <h3 class="font-black text-white italic flex items-center gap-2 uppercase w-1/3"><i class="ph-bold ph-intersect text-brand"></i> 行情雷达</h3>
-                    <div class="flex gap-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest w-2/3 justify-end">
-                        <span class="w-20 text-right">成交量</span>
-                        <span class="w-24 text-right">总市值</span>
-                    </div>
+                <div class="flex justify-between items-end mb-4 border-b border-white/5 pb-2 px-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                    <span class="w-1/3">藏品信息</span><span class="w-1/3 text-right">地板价格</span><span class="w-1/3 text-right">总市值</span>
                 </div>
                 
+                <!-- 行情列表 (增量渲染，不闪烁) -->
                 <div id="price-list" class="flex-1 overflow-y-auto space-y-2 log-container pr-2"></div>
             </div>
 
             <div class="lg:col-span-7 space-y-6">
                 <div class="glass-panel p-8 rounded-2xl">
-                    <h2 class="text-sm font-black text-gray-300 flex items-center gap-2 mb-6 uppercase tracking-widest">
-                        <i class="ph-fill ph-target text-brand"></i> 私人定制预警
-                    </h2>
+                    <h2 class="text-sm font-black text-gray-300 flex items-center gap-2 mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand"></i> 藏品价额预警</h2>
                     <div class="flex gap-4">
-                        <input id="alert-name" type="text" placeholder="藏品名称..." class="flex-1 bg-[#12161b] border border-white/5 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-brand">
-                        <input id="alert-price" type="number" placeholder="预警价" class="w-32 bg-[#12161b] border border-white/5 rounded-lg px-4 py-3 text-sm text-white font-mono">
-                        <button onclick="addAlert()" class="bg-brand text-white font-black rounded-lg px-6 hover:bg-blue-600 text-xs transition-all">部署</button>
+                        <input id="alert-name" type="text" placeholder="关键字..." class="flex-1 bg-[#12161b] border border-white/5 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-brand">
+                        <input id="alert-price" type="number" placeholder="价格" class="w-32 bg-[#12161b] border border-white/5 rounded-lg px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-brand">
+                        <button onclick="addAlert()" class="bg-brand text-white font-black rounded-lg px-6 text-xs transition-all shadow-lg">部署</button>
                     </div>
                     <div id="active-alerts" class="mt-6 flex flex-wrap gap-2"></div>
                 </div>
-                
-                <!-- 📈 K线图区域及时间级别切换器 -->
+
                 <div class="glass-panel p-6 rounded-2xl h-[420px] flex flex-col">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-black text-gray-300 flex items-center gap-2 uppercase tracking-widest">
-                            <i class="ph-fill ph-chart-bar text-brand"></i> 大盘走势
-                        </h3>
+                        <h3 class="text-sm font-black text-gray-300 flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-bar text-brand"></i> 实时走势 </h3>
                         <div class="flex gap-1 bg-[#12161b] p-1 rounded-lg border border-white/5">
-                            <button onclick="switchFrame('1m')" id="btn-1m" class="px-3 py-1 rounded-md text-xs font-bold bg-white/10 text-white transition-all">1分</button>
-                            <button onclick="switchFrame('5m')" id="btn-5m" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-white transition-all">5分</button>
-                            <button onclick="switchFrame('1h')" id="btn-1h" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-white transition-all">1小时</button>
-                            <button onclick="switchFrame('1d')" id="btn-1d" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-white transition-all">日线</button>
+                            <button onclick="switchFrame('1m')" id="btn-1m" class="px-3 py-1 rounded-md text-xs font-bold tab-btn-active transition-all">1分</button>
+                            <button onclick="switchFrame('5m')" id="btn-5m" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 transition-all">5分</button>
+                            <button onclick="switchFrame('1h')" id="btn-1h" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 transition-all">1时</button>
+                            <button onclick="switchFrame('1d')" id="btn-1d" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 transition-all">日线</button>
                         </div>
                     </div>
                     <div id="mainChart" class="flex-1 w-full"></div>
@@ -128,326 +117,229 @@
     </div>
 
     <script>
-        let isRunning = false;
-        let userAlerts = [];
-        let toastTimeout;
-
-        // 📈 K线图核心变量
-        let chartInstance = null;
-        let klineData = []; 
-        let currentCandle = null;
-        let tickCount = 0;
-        
-        let currentFrame = '1m';
-        let TICKS_PER_CANDLE = 20; 
+        let isRunning = false, userAlerts = [], chartInstance = null, currentFrame = '1m';
+        let klineData = [], liveCandle = null, lastPointCount = 0;
+        let lastPrices = {}, toastTimeout;
+        let apiBaseUrl = "http://127.0.0.1:5000"; 
 
         window.onload = () => {
             initChart();
-            const savedUrl = localStorage.getItem('xmeta_url');
-            const savedUid = localStorage.getItem('xmeta_uid');
-            const savedAlerts = localStorage.getItem('xmeta_alerts');
-            if(savedUrl) document.getElementById('api-url').value = savedUrl;
-            if(savedUid) document.getElementById('user-uid').value = savedUid;
-            if(savedAlerts) { userAlerts = JSON.parse(savedAlerts); renderAlertTags(); }
+            if(localStorage.getItem('xmeta_url')) document.getElementById('api-url').value = localStorage.getItem('xmeta_url');
+            if(localStorage.getItem('xmeta_uid')) document.getElementById('user-uid').value = localStorage.getItem('xmeta_uid');
+            if(localStorage.getItem('xmeta_alerts')) { userAlerts = JSON.parse(localStorage.getItem('xmeta_alerts')); renderAlertTags(); }
         };
 
         function showToast(msg) {
             const toast = document.getElementById('toast-msg');
             document.getElementById('toast-text').innerText = msg;
-            toast.className = `fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none bg-brand text-white`;
+            toast.className = `fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 bg-brand text-white px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none`;
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => { toast.classList.replace('translate-y-0', 'translate-y-20'); toast.classList.replace('opacity-100', 'opacity-0'); }, 3000);
         }
 
-        async function syncAlertsToBackend() {
-            if (!isRunning) return; 
-            const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
-            const uid = document.getElementById('user-uid').value.trim();
-            if(!uid) return;
-            localStorage.setItem('xmeta_uid', uid);
-            localStorage.setItem('xmeta_alerts', JSON.stringify(userAlerts));
-
-            try {
-                await fetch(`${baseUrl}/update_alerts`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-                    body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price })) })
-                });
-            } catch (e) {}
-        }
-
-        function toggleMonitor() {
+        async function toggleMonitor() {
             if (isRunning) return;
-            if(!document.getElementById('user-uid').value.trim()) return alert("请先填写 UID！");
+            const uid = document.getElementById('user-uid').value.trim();
+            if(!uid) return alert("请先填写 UID");
             
-            localStorage.setItem('xmeta_url', document.getElementById('api-url').value);
+            apiBaseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
+            localStorage.setItem('xmeta_url', apiBaseUrl);
+            localStorage.setItem('xmeta_uid', uid);
             isRunning = true;
-            document.getElementById('start-btn').innerText = "已连接";
+            document.getElementById('start-btn').innerText = "雷达在线";
             document.getElementById('start-btn').disabled = true;
-            document.getElementById('user-uid').disabled = true; 
-            syncAlertsToBackend(); 
+            syncAlerts();
 
             setInterval(async () => {
-                const baseUrl = document.getElementById('api-url').value.replace(/\/$/, "");
                 try {
-                    const res = await fetch(`${baseUrl}/prices`, { headers: { 'ngrok-skip-browser-warning': 'true' }});
+                    const res = await fetch(`${apiBaseUrl}/prices`);
                     const result = await res.json();
                     if (result.status === 'success') {
                         document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-price animate-pulse";
-                        document.getElementById('status-text').innerText = "实时同频中";
+                        document.getElementById('status-text').innerText = "实时同步中 (1s)";
+
+                        if (result.history && result.history[currentFrame]) {
+                            const newHistory = result.history[currentFrame];
+                            if (newHistory.length > lastPointCount) liveCandle = null;
+                            klineData = newHistory;
+                            lastPointCount = newHistory.length;
+                        }
                         updateUI(result);
                     }
-                } catch (e) {
-                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-up";
-                    document.getElementById('status-text').innerText = "网络断开";
-                }
-            }, 3000); 
+                } catch (e) { document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-up"; }
+            }, 1000);
         }
 
         function formatMarketValue(num) {
-            if (!num || isNaN(num)) return "0";
-            if (num >= 100000000) return parseFloat((num / 100000000).toFixed(2)) + "亿";
-            if (num >= 10000) return parseFloat((num / 10000).toFixed(2)) + "万";
-            return parseFloat(num.toFixed(2));
+            if (num >= 100000000) return (num / 100000000).toFixed(2) + "亿";
+            if (num >= 10000) return (num / 10000).toFixed(2) + "万";
+            return num.toFixed(2);
         }
 
         function formatRate(rate) {
-            if (rate === undefined || rate === null || rate === 0) return '<span class="text-xs text-gray-500 font-mono">0.00%</span>';
-            return rate > 0 
-                ? `<span class="text-xs text-up font-bold font-mono">${rate.toFixed(2)}%</span>` 
-                : `<span class="text-xs text-down font-bold font-mono">${rate.toFixed(2)}%</span>`;
+            if (!rate) return '<span class="text-[10px] text-gray-500">0.00%</span>';
+            return `<span class="text-[10px] ${rate > 0 ? 'text-up font-bold' : 'text-down'} font-mono">${rate.toFixed(2)}%</span>`;
         }
 
-        function switchFrame(frame) {
-            currentFrame = frame;
-            ['1m', '5m', '1h', '1d'].forEach(f => {
-                let btn = document.getElementById(`btn-${f}`);
-                if (f === frame) {
-                    btn.className = "px-3 py-1 rounded-md text-xs font-bold bg-white/10 text-white transition-all";
+        function updateUI(result) {
+            const list = document.getElementById('price-list');
+            let sumPrice = 0, totalMarket = 0, totalMarketYtd = 0, totalDeal = 0, totalDealAmt = 0, totalDealAmtYtd = 0;
+
+            result.data.forEach(item => {
+                sumPrice += item.price;
+                totalMarket += item.marketAmount;
+                totalDeal += item.dealCount;
+                totalDealAmt += item.dealAmount;
+                totalMarketYtd += item.marketRate > -99.9 ? (item.marketAmount / (1 + item.marketRate / 100)) : item.marketAmount;
+                totalDealAmtYtd += item.dealRate > -99.9 ? (item.dealAmount / (1 + item.dealRate / 100)) : item.dealAmount;
+
+                let safeId = item.id || encodeURIComponent(item.name).replace(/%/g, '_');
+                let row = document.getElementById('row-' + safeId);
+                let isAlert = userAlerts.some(a => item.name.includes(a.name) && item.price <= a.price);
+
+                let safeImgUrl = item.image ? `${apiBaseUrl}/proxy_image?url=${encodeURIComponent(item.image)}` : '';
+
+                if (!row) {
+                    list.insertAdjacentHTML('beforeend', `
+                        <div id="row-${safeId}" class="item-row flex items-center justify-between p-3 rounded-xl border bg-[#12161b] border-white/5 transition-all duration-500">
+                            <div class="flex items-center gap-3 w-1/3 min-w-0">
+                                <div class="w-10 h-10 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 border border-white/5 flex items-center justify-center relative">
+                                    <span class="text-[9px] text-slate-600 font-bold absolute z-0">无图</span>
+                                    <img src="${safeImgUrl}" class="w-full h-full object-cover item-img relative z-10" onerror="this.style.opacity='0';">
+                                </div>
+                                <div class="flex flex-col min-w-0">
+                                    <span class="text-sm font-bold text-gray-200 truncate">${item.name}</span>
+                                    <span id="deal-${safeId}" class="text-[10px] text-gray-500 uppercase mt-0.5">成交 ${item.dealCount}</span>
+                                </div>
+                            </div>
+                            <div class="w-1/3 text-right flex flex-col gap-0.5">
+                                <span id="price-${safeId}" class="font-mono text-sm text-price">¥${item.price.toFixed(2)}</span>
+                                <div id="mrate-${safeId}">${formatRate(item.minRate)}</div>
+                            </div>
+                            <div class="w-1/3 text-right flex flex-col gap-0.5">
+                                <span id="market-${safeId}" class="font-mono text-sm text-price">¥${formatMarketValue(item.marketAmount)}</span>
+                                <div id="trate-${safeId}">${formatRate(item.marketRate)}</div>
+                            </div>
+                        </div>
+                    `);
                 } else {
-                    btn.className = "px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-white transition-all";
+                    document.getElementById(`deal-${safeId}`).innerText = `成交 ${item.dealCount}`;
+                    let pEl = document.getElementById(`price-${safeId}`);
+                    if (lastPrices[safeId] !== item.price) {
+                        pEl.innerText = `¥${item.price.toFixed(2)}`;
+                        pEl.className = `font-mono text-sm ${isAlert ? 'text-up font-black' : 'text-price'}`;
+                        row.classList.add(item.price > lastPrices[safeId] ? 'flash-up' : 'flash-down');
+                        setTimeout(() => row.classList.remove('flash-up', 'flash-down'), 800);
+                        lastPrices[safeId] = item.price;
+                    }
+                    document.getElementById(`market-${safeId}`).innerText = `¥${formatMarketValue(item.marketAmount)}`;
+                    document.getElementById(`mrate-${safeId}`).innerHTML = formatRate(item.minRate);
+                    document.getElementById(`trate-${safeId}`).innerHTML = formatRate(item.marketRate);
+                    row.className = `item-row flex items-center justify-between p-3 rounded-xl border transition-all duration-500 ${isAlert ? 'bg-up/10 border-up shadow-lg shadow-up/10' : 'bg-[#12161b] border-white/5'}`;
                 }
             });
 
-            if (frame === '1m') TICKS_PER_CANDLE = 20;       
-            if (frame === '5m') TICKS_PER_CANDLE = 100;      
-            if (frame === '1h') TICKS_PER_CANDLE = 1200;     
-            if (frame === '1d') TICKS_PER_CANDLE = 28800;    
+            document.getElementById('global-market-val').innerText = '¥' + formatMarketValue(totalMarket);
+            document.getElementById('global-market-rate').innerHTML = formatRate(totalMarketYtd > 0 ? ((totalMarket - totalMarketYtd) / totalMarketYtd) * 100 : 0);
+            document.getElementById('global-deal-val').innerText = totalDeal;
+            document.getElementById('global-deal-rate').innerHTML = formatRate(totalDealAmtYtd > 0 ? ((totalDealAmt - totalDealAmtYtd) / totalDealAmtYtd) * 100 : 0);
+            
+            const currentAvg = result.data.length > 0 ? Number((sumPrice / result.data.length).toFixed(2)) : 0;
+            
+            document.getElementById('avg-price').innerText = currentAvg.toFixed(2);
+            document.getElementById('item-count').innerText = result.data.length;
+            document.getElementById('sync-time').innerText = result.time;
 
-            // 重置 K线数据，以纯净的当前价格开启第一根蜡烛
-            klineData = [];
-            currentCandle = null;
-            tickCount = 0;
-
-            const currentAvg = parseFloat(document.getElementById('avg-price').innerText);
-            if (!isNaN(currentAvg) && currentAvg > 0) {
-                updateKLine(currentAvg); 
+            if (currentAvg > 0) {
+                if (!liveCandle || liveCandle[0] === 0) {
+                    liveCandle = [currentAvg, currentAvg, currentAvg, currentAvg];
+                } else { 
+                    liveCandle[1] = currentAvg; 
+                    liveCandle[3] = Math.max(liveCandle[3], currentAvg); 
+                    liveCandle[2] = Math.min(liveCandle[2], currentAvg); 
+                }
             }
+            renderKLine();
         }
 
-        // 📈 纯净版更新实时 K 线数据 (去除虚假历史，从当下开始记录)
-        function updateKLine(price) {
-            if (!currentCandle) {
-                currentCandle = { open: price, high: price, low: price, close: price };
-            } else {
-                currentCandle.close = price;
-                if (price > currentCandle.high) currentCandle.high = price;
-                if (price < currentCandle.low) currentCandle.low = price;
-            }
+        function switchFrame(frame) {
+            currentFrame = frame; liveCandle = null;
+            ['1m', '5m', '1h', '1d'].forEach(f => {
+                document.getElementById(`btn-${f}`).className = f === frame ? "px-3 py-1 rounded-md text-xs font-bold tab-btn-active transition-all" : "px-3 py-1 rounded-md text-xs font-bold text-gray-500 transition-all";
+            });
+            renderKLine();
+        }
 
-            // 微观波动博弈注入
-            let volatilityMultipliers = { '1m': 1, '5m': 1.5, '1h': 2, '1d': 3 };
-            let microJitter = price * 0.0001 * (volatilityMultipliers[currentFrame] || 1); 
-            
-            currentCandle.high = Math.max(currentCandle.high, currentCandle.close + Math.random() * microJitter);
-            currentCandle.low = Math.min(currentCandle.low, currentCandle.close - Math.random() * microJitter);
-
-            tickCount++;
-            if (tickCount >= TICKS_PER_CANDLE) {
-                klineData.push([
-                    parseFloat(currentCandle.open.toFixed(2)), 
-                    parseFloat(currentCandle.close.toFixed(2)), 
-                    parseFloat(currentCandle.low.toFixed(2)), 
-                    parseFloat(currentCandle.high.toFixed(2))
-                ]);
-                if (klineData.length > 60) klineData.shift(); 
-                currentCandle = null;
-                tickCount = 0;
-            }
-
+        function renderKLine() {
             let displayData = [...klineData];
-            if (currentCandle) {
-                displayData.push([
-                    parseFloat(currentCandle.open.toFixed(2)), 
-                    parseFloat(currentCandle.close.toFixed(2)), 
-                    parseFloat(currentCandle.low.toFixed(2)), 
-                    parseFloat(currentCandle.high.toFixed(2))
-                ]);
-            }
+            if (liveCandle && liveCandle[0] > 0) displayData.push([...liveCandle]);
 
-            if (displayData.length === 0) return;
-
-            let allValues = displayData.flatMap(d => [d[0], d[1], d[2], d[3]]);
-            let minPrice = Math.min(...allValues);
-            let maxPrice = Math.max(...allValues);
-            let padding = (maxPrice - minPrice) * 0.2; 
-            if (padding < 0.1) padding = 0.5; 
+            if (!displayData.length) return;
+            const allValues = displayData.flatMap(d => d);
+            const minP = Math.min(...allValues), maxP = Math.max(...allValues), pad = (maxP - minP) * 0.15 || 0.5;
+            
+            const lastCandle = displayData[displayData.length - 1];
+            const currentClose = lastCandle[1];
 
             chartInstance.setOption({
+                animation: false, 
                 xAxis: { data: new Array(displayData.length).fill('') },
-                yAxis: { 
-                    min: parseFloat((minPrice - padding).toFixed(2)), 
-                    max: parseFloat((maxPrice + padding).toFixed(2)) 
-                },
-                series: [{ data: displayData }]
+                yAxis: { min: (minP - pad).toFixed(2), max: (maxP + pad).toFixed(2) },
+                series: [{ 
+                    animation: false, 
+                    animationDurationUpdate: 0, 
+                    data: displayData, 
+                    markLine: { 
+                        symbol: ['none', 'none'], 
+                        data: [{ yAxis: currentClose }], 
+                        animation: false, 
+                        lineStyle: { color: '#ff4d4f', type: 'dashed' }, 
+                        label: { show: true, position: 'end', formatter: '现价: ¥{c}', backgroundColor: '#ff4d4f', color: '#fff', padding: [2, 4], borderRadius: 4 } 
+                    } 
+                }]
             });
         }
 
         function initChart() {
             chartInstance = echarts.init(document.getElementById('mainChart'));
-            const option = {
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: { type: 'cross', lineStyle: { color: 'rgba(255,255,255,0.2)' } },
-                    backgroundColor: 'rgba(18, 22, 27, 0.9)',
-                    borderColor: '#3b82f6',
-                    textStyle: { color: '#fff', fontSize: 12, fontFamily: 'monospace' },
-                    formatter: function (params) {
-                        let k = params[0].data; 
-                        return `<div class="font-bold text-gray-300 mb-1">实时博弈 (${currentFrame.toUpperCase()})</div>
-                        <span class="text-gray-400">开:</span> <span class="${k[1] <= k[2] ? 'text-up' : 'text-down'}">${k[1]}</span><br/>
-                        <span class="text-gray-400">高:</span> <span class="${k[1] <= k[2] ? 'text-up' : 'text-down'}">${k[4]}</span><br/>
-                        <span class="text-gray-400">低:</span> <span class="${k[1] <= k[2] ? 'text-up' : 'text-down'}">${k[3]}</span><br/>
-                        <span class="text-gray-400">收:</span> <span class="${k[1] <= k[2] ? 'text-up' : 'text-down'}">${k[2]}</span>`;
-                    }
+            chartInstance.setOption({
+                animation: false, 
+                tooltip: { 
+                    trigger: 'axis', axisPointer: { type: 'cross' }, 
+                    backgroundColor: 'rgba(18,22,27,0.95)', borderColor: '#3b82f6', textStyle: { color: '#fff', fontSize: 11 }, 
+                    formatter: p => { 
+                        // 🚨 核心修复：改用 p[0].value 准确避开 ECharts 内部插队的序号
+                        let v = p[0].value; 
+                        let open = v[1], close = v[2], lowest = v[3], highest = v[4];
+                        let up = close >= open;
+                        return `<div class='p-1'><div class='font-bold text-gray-400 mb-2 border-b border-white/10 flex justify-between'><span>行情详情</span><span class='${up?'text-up':'text-down'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-6 mb-1'>开盘价<span>¥${open.toFixed(2)}</span></div><div class='flex justify-between gap-6 mb-1'>收盘价<span class='${up?'text-up':'text-down'} font-bold'>¥${close.toFixed(2)}</span></div><div class='flex justify-between gap-6 mb-1'>最低价<span>¥${lowest.toFixed(2)}</span></div><div class='flex justify-between gap-6'>最高价<span>¥${highest.toFixed(2)}</span></div></div>` 
+                    } 
                 },
                 grid: { left: '2%', right: '2%', bottom: '5%', top: '5%', containLabel: true },
-                xAxis: { 
-                    type: 'category', 
+                xAxis: { type: 'category', data: [], axisLine: { show: false }, splitLine: { show: false } },
+                yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, axisLabel: { color: '#4a5568', fontSize: 10 } },
+                series: [{ 
+                    type: 'candlestick', 
                     data: [], 
-                    boundaryGap: true,
-                    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
-                    axisLabel: { show: false },
-                    splitLine: { show: false }
-                },
-                yAxis: { 
-                    type: 'value', 
-                    scale: true, 
-                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } },
-                    axisLabel: { color: '#6b7280', formatter: '¥{value}', fontFamily: 'monospace' }
-                },
-                series: [{
-                    name: '大盘均价指数',
-                    type: 'candlestick',
-                    data: [],
-                    itemStyle: {
-                        color: '#ff4d4f',      
-                        color0: '#00d8a6',     
-                        borderColor: '#ff4d4f',
-                        borderColor0: '#00d8a6'
-                    }
+                    animation: false, 
+                    itemStyle: { color: '#ff4d4f', color0: '#00d8a6', borderColor: '#ff4d4f', borderColor0: '#00d8a6' } 
                 }]
-            };
-            chartInstance.setOption(option);
+            });
             window.addEventListener('resize', () => chartInstance.resize());
         }
 
-        function updateUI(result) {
-            const listContainer = document.getElementById('price-list');
-            listContainer.innerHTML = "";
-            let sumPrice = 0;
-            
-            document.getElementById('item-count').innerText = result.data.length;
-            document.getElementById('sync-time').innerText = result.time;
-
-            let totalMarket = 0, totalMarketYtd = 0;
-            let totalDeal = 0, totalDealAmt = 0, totalDealAmtYtd = 0;
-
-            result.data.forEach(item => {
-                sumPrice += item.price;
-                let mValue = item.marketAmount || 0;
-                let mRate = item.marketRate || 0;
-                let tVolume = item.dealCount || 0;
-                let dAmt = item.dealAmount || 0;   
-                let dRate = item.dealRate || 0;
-
-                totalMarket += mValue;
-                totalDeal += tVolume;
-                totalDealAmt += dAmt;
-
-                // 🚨 防 NaN 崩溃除法逻辑
-                if (mRate > -99.99) {
-                    totalMarketYtd += mRate !== 0 ? (mValue / (1 + mRate / 100)) : mValue;
-                }
-                if (dRate > -99.99) {
-                    totalDealAmtYtd += dRate !== 0 ? (dAmt / (1 + dRate / 100)) : dAmt;
-                }
-
-                let isAlert = userAlerts.some(a => item.name.includes(a.name) && item.price <= a.price);
-
-                listContainer.innerHTML += `
-                    <div class="flex items-center justify-between p-4 rounded-xl border ${isAlert ? 'bg-up/10 border-up' : 'bg-[#12161b] border-white/5 hover:border-white/10'}">
-                        
-                        <div class="flex flex-col gap-1 w-1/3">
-                            <span class="text-sm font-bold text-gray-200 truncate">${item.name}</span>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">地板</span>
-                                <span class="font-mono text-sm text-price">¥${item.price.toFixed(2)}</span>
-                                ${formatRate(item.minRate)}
-                            </div>
-                        </div>
-
-                        <div class="flex gap-4 text-right items-center w-2/3 justify-end">
-                            <div class="w-20 flex flex-col items-end gap-0.5">
-                                <span class="text-sm font-bold font-mono text-price">${tVolume}</span>
-                                ${formatRate(item.dealRate)}
-                            </div>
-
-                            <div class="w-24 flex flex-col items-end gap-0.5">
-                                <span class="text-sm font-black font-mono text-price">¥${formatMarketValue(mValue)}</span>
-                                ${formatRate(item.marketRate)}
-                            </div>
-                        </div>
-
-                    </div>
-                `;
-            });
-
-            let globalMarketRate = totalMarketYtd > 0 ? ((totalMarket - totalMarketYtd) / totalMarketYtd) * 100 : 0;
-            let globalDealRate = totalDealAmtYtd > 0 ? ((totalDealAmt - totalDealAmtYtd) / totalDealAmtYtd) * 100 : 0;
-
-            document.getElementById('global-market-val').innerText = '¥' + formatMarketValue(totalMarket);
-            document.getElementById('global-market-rate').innerHTML = formatRate(globalMarketRate);
-            document.getElementById('global-deal-val').innerText = totalDeal;
-            document.getElementById('global-deal-rate').innerHTML = formatRate(globalDealRate);
-
-            const avg = sumPrice / (result.data.length || 1);
-            document.getElementById('avg-price').innerText = avg.toFixed(2);
-            updateKLine(avg);
-        }
-
         function addAlert() {
-            const name = document.getElementById('alert-name').value.trim();
-            const price = parseFloat(document.getElementById('alert-price').value);
-            if (name && !isNaN(price)) {
-                userAlerts.push({name, price});
-                document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = "";
-                renderAlertTags(); syncAlertsToBackend(); 
-            }
+            const n = document.getElementById('alert-name').value.trim(), p = parseFloat(document.getElementById('alert-price').value);
+            if(n && !isNaN(p)) { userAlerts.push({name: n, price: p}); document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = ""; renderAlertTags(); syncAlerts(); }
         }
-
-        function removeAlert(index) {
-            userAlerts.splice(index, 1);
-            renderAlertTags(); syncAlertsToBackend(); 
-        }
-
         function renderAlertTags() {
-            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `
-                <div class="bg-brand/10 border border-brand/20 px-3 py-1.5 rounded-lg flex items-center gap-2">
-                    <span class="text-xs font-bold text-gray-300">${a.name} < ¥${a.price}</span>
-                    <i class="ph ph-x text-gray-500 hover:text-up cursor-pointer" onclick="removeAlert(${i})"></i>
-                </div>
-            `).join('');
+            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `<div class="bg-brand/10 border border-brand/20 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold text-gray-300">${a.name} < ¥${a.price} <i class="ph ph-x cursor-pointer hover:text-up" onclick="userAlerts.splice(${i},1);renderAlertTags();syncAlerts();"></i></div>`).join('');
+            localStorage.setItem('xmeta_alerts', JSON.stringify(userAlerts));
+        }
+        async function syncAlerts() {
+            if(!apiBaseUrl || !isRunning) return;
+            const uid = document.getElementById('user-uid').value;
+            try { await fetch(`${apiBaseUrl}/update_alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price })) }) }); showToast("报警配置已同步到云端"); } catch(e){}
         }
     </script>
 </body>
