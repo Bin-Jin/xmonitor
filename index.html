@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 🚨 双重防盗链破解指令 🚨 -->
     <meta name="referrer" content="no-referrer">
+    <!-- 🚀 强制全浏览器暗黑模式渲染，确保 Edge 控件背景一致 -->
+    <meta name="color-scheme" content="dark">
     
     <title>XMeta 典藏行情终端 Pro Max</title>
     
-    <!-- 🚀 核心修复 1：引入真正的顶级无衬线字体 Inter，确保全浏览器显示绝对一致 -->
+    <!-- 引入真正的顶级无衬线字体 Inter，确保跨平台文字质感统一 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -20,37 +21,39 @@
         tailwind.config = { darkMode: 'class', theme: { extend: { colors: { bgDark: '#12161b', cardDark: '#1a1e24', brand: '#3b82f6', price: '#00d8a6', up: '#ff4d4f', down: '#00d8a6' } } } }
     </script>
     <style>
+        /* 🚀 接管全局滚动条，彻底消除 Edge 右侧原始大灰条 */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #12161b; }
+        ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4a5568; }
+
         body { 
             background-color: #12161b; 
             color: #e2e8f0; 
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            /* 加入最强的回退字体链，确保中文不发虚 */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; 
             overflow-x: hidden; 
-            /* 🚀 核心修复 2：开启高级字体抗锯齿平滑渲染 */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            user-select: none;
         }
         
-        /* 🚀 核心修复 3：强行干掉 Edge 输入框自带的清除小叉号和密码框眼睛，防止布局错位 */
+        /* 屏蔽 Edge 特有控件 */
         input::-ms-clear, input::-ms-reveal { display: none; }
-        
-        /* 🚀 核心修复 4：强行干掉所有浏览器自带的数字输入框上下小箭头 */
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-        }
-        input[type=number] { -moz-appearance: textfield; }
+        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+        input:focus { outline: none !important; }
 
         .glass-panel { background: #1a1e24; border: 1px solid rgba(255, 255, 255, 0.05); }
         .log-container::-webkit-scrollbar { width: 4px; }
-        .log-container::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 10px; }
         .tab-btn-active { background: rgba(255,255,255,0.1); color: white; }
-        @keyframes up-flash { 0% { background-color: rgba(255,77,79,0.2); } 100% { background-color: transparent; } }
-        @keyframes down-flash { 0% { background-color: rgba(0,216,166,0.2); } 100% { background-color: transparent; } }
-        .flash-up { animation: up-flash 0.8s ease-out; }
-        .flash-down { animation: down-flash 0.8s ease-out; }
-        .item-img { transition: transform 0.3s ease; }
-        .item-row:hover .item-img { transform: scale(1.15); }
+        
+        /* 动画性能优化：使用 transform 而非 background-color */
+        @keyframes up-flash { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        .flash-up { animation: up-flash 0.5s ease-out; }
+        .flash-down { animation: up-flash 0.5s ease-out; }
+        
+        .item-row { backface-visibility: hidden; will-change: contents; }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-6 lg:p-8">
@@ -61,29 +64,29 @@
 
     <div class="max-w-[1600px] mx-auto space-y-6">
         <header class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-            <div class="lg:col-span-1 glass-panel p-6 rounded-2xl flex flex-col justify-between">
+            <div class="lg:col-span-1 glass-panel p-6 rounded-2xl flex flex-col justify-between shadow-xl">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center border border-brand/20">
-                        <i class="ph-fill ph-shield-check text-2xl text-brand"></i>
+                        <i class="ph-fill ph-lightning text-2xl text-brand"></i>
                     </div>
                     <div>
                         <h1 class="text-xl font-black italic tracking-tighter text-white uppercase">XMeta <span class="text-brand">Radar</span> Pro</h1>
-                        <div class="flex items-center gap-2"><div id="status-dot" class="w-2 h-2 rounded-full bg-gray-500"></div><span id="status-text" class="text-[10px] font-mono text-gray-400 uppercase tracking-widest">等待连接...</span></div>
+                        <div class="flex items-center gap-2"><div id="status-dot" class="w-2 h-2 rounded-full bg-gray-600"></div><span id="status-text" class="text-[10px] font-mono text-gray-500 uppercase tracking-widest">等待连接...</span></div>
                     </div>
                 </div>
                 <div class="mt-6 space-y-3">
-                    <input id="user-uid" type="text" placeholder="WxPusher UID (降价提醒)" class="w-full bg-[#12161b] border border-white/5 rounded-lg px-4 py-2 text-xs text-white focus:outline-none focus:border-brand font-mono">
+                    <input id="user-uid" type="text" placeholder="WxPusher UID (降价提醒)" class="w-full bg-[#12161b] border border-white/5 rounded-lg px-4 py-2 text-xs text-white focus:border-brand font-mono transition-colors">
                     <div class="flex gap-2">
-                        <input id="api-url" type="text" placeholder="http://127.0.0.1:5000" class="flex-1 bg-[#12161b] border border-white/5 rounded-lg px-4 py-2 text-xs text-white focus:outline-none focus:border-brand">
-                        <button onclick="toggleMonitor()" id="start-btn" class="bg-brand text-white px-4 py-2 rounded-lg text-xs font-bold transition-all hover:bg-blue-600 shadow-lg">连接雷达</button>
+                        <input id="api-url" type="text" placeholder="http://127.0.0.1:5000" class="flex-1 bg-[#12161b] border border-white/5 rounded-lg px-4 py-2 text-xs text-white focus:border-brand">
+                        <button onclick="toggleMonitor()" id="start-btn" class="bg-brand hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-xs font-bold transition-all shadow-lg active:scale-95">连接雷达</button>
                     </div>
                 </div>
             </div>
 
-            <div class="lg:col-span-2 glass-panel p-8 rounded-2xl border-t-2 border-brand flex flex-col md:flex-row items-center gap-10">
-                <div class="flex-1">
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-2"><i class="ph-bold ph-globe"></i> 典藏均价实时指数</p>
-                    <div class="flex items-baseline gap-4"><span id="avg-price" class="text-5xl font-black text-white font-mono tracking-tighter">0.00</span></div>
+            <div class="lg:col-span-2 glass-panel p-8 rounded-2xl border-t-2 border-brand flex flex-col md:flex-row items-center gap-10 shadow-xl">
+                <div class="flex-1 text-center md:text-left">
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-center md:justify-start gap-2"><i class="ph-bold ph-globe"></i> 典藏均价实时指数</p>
+                    <div class="flex items-baseline justify-center md:justify-start gap-4"><span id="avg-price" class="text-5xl font-black text-white font-mono tracking-tighter">0.00</span></div>
                 </div>
                 <div class="grid grid-cols-2 gap-8 border-l border-white/5 pl-10 h-full py-2">
                     <div><p class="text-[10px] text-gray-500 font-bold uppercase mb-1">监控项目数</p><p id="item-count" class="text-xl font-bold text-white font-mono">0</p></div>
@@ -93,15 +96,16 @@
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-5 h-[780px] flex flex-col glass-panel p-6 rounded-2xl">
-                <div class="flex items-center gap-6 mb-4 px-2 bg-[#12161b] py-3 rounded-lg border border-white/5 shadow-inner">
+            <!-- 列表区 -->
+            <div class="lg:col-span-5 h-[780px] flex flex-col glass-panel p-6 rounded-2xl shadow-xl">
+                <div class="flex items-center gap-6 mb-4 px-3 bg-[#12161b] py-3 rounded-xl border border-white/5">
                     <div class="flex items-baseline gap-2">
-                        <span class="text-[11px] text-gray-400 font-bold">总市值</span>
+                        <span class="text-[11px] text-gray-500 font-bold">总市值</span>
                         <span id="global-market-rate"></span>
                         <span id="global-market-val" class="text-sm font-black text-price font-mono">¥0</span>
                     </div>
                     <div class="flex items-baseline gap-2 border-l border-white/10 pl-6">
-                        <span class="text-[11px] text-gray-400 font-bold">交易量</span>
+                        <span class="text-[11px] text-gray-500 font-bold">成交量</span>
                         <span id="global-deal-rate"></span>
                         <span id="global-deal-val" class="text-sm font-black text-price font-mono">0</span>
                     </div>
@@ -111,29 +115,28 @@
                     <span class="w-1/3">藏品信息</span><span class="w-1/3 text-right">地板价格</span><span class="w-1/3 text-right">总市值</span>
                 </div>
                 
-                <!-- 行情列表 (增量渲染，不闪烁) -->
                 <div id="price-list" class="flex-1 overflow-y-auto space-y-2 log-container pr-2"></div>
             </div>
 
+            <!-- 任务与图表 -->
             <div class="lg:col-span-7 space-y-6">
-                <div class="glass-panel p-8 rounded-2xl">
-                    <h2 class="text-sm font-black text-gray-300 flex items-center gap-2 mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand"></i> 私人定制预警</h2>
+                <div class="glass-panel p-8 rounded-2xl shadow-xl">
+                    <h2 class="text-sm font-black text-gray-400 flex items-center gap-2 mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand"></i> 藏品价格预警</h2>
                     <div class="flex gap-4">
-                        <input id="alert-name" type="text" placeholder="关键字..." class="flex-1 bg-[#12161b] border border-white/5 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-brand">
-                        <input id="alert-price" type="number" placeholder="价格" class="w-32 bg-[#12161b] border border-white/5 rounded-lg px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-brand">
-                        <button onclick="addAlert()" class="bg-brand text-white font-black rounded-lg px-6 text-xs transition-all shadow-lg">部署</button>
+                        <input id="alert-name" type="text" placeholder="关键字..." class="flex-1 bg-[#12161b] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-brand transition-colors">
+                        <input id="alert-price" type="number" placeholder="价格" class="w-32 bg-[#12161b] border border-white/5 rounded-xl px-4 py-3 text-sm text-white font-mono">
+                        <button onclick="addAlert()" class="bg-brand hover:bg-blue-600 text-white font-black rounded-xl px-8 text-xs transition-all shadow-lg active:scale-95">部署任务</button>
                     </div>
                     <div id="active-alerts" class="mt-6 flex flex-wrap gap-2"></div>
                 </div>
 
-                <div class="glass-panel p-6 rounded-2xl h-[420px] flex flex-col">
+                <div class="glass-panel p-6 rounded-2xl h-[420px] flex flex-col shadow-xl">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-black text-gray-300 flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-bar text-brand"></i> 实时走势 (单柱独立版)</h3>
+                        <h3 class="text-sm font-black text-gray-400 flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-line text-brand"></i> 实时走势 </h3>
                         <div class="flex gap-1 bg-[#12161b] p-1 rounded-lg border border-white/5">
-                            <button onclick="switchFrame('1m')" id="btn-1m" class="px-3 py-1 rounded-md text-xs font-bold tab-btn-active transition-all">1分</button>
-                            <button onclick="switchFrame('5m')" id="btn-5m" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 transition-all">5分</button>
-                            <button onclick="switchFrame('1h')" id="btn-1h" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 transition-all">1时</button>
-                            <button onclick="switchFrame('1d')" id="btn-1d" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 transition-all">日线</button>
+                            <button onclick="switchFrame('1m')" id="btn-1m" class="px-3 py-1 rounded-md text-xs font-bold tab-btn-active">1分</button>
+                            <button onclick="switchFrame('5m')" id="btn-5m" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500">5分</button>
+                            <button onclick="switchFrame('1h')" id="btn-1h" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500">1时</button>
                         </div>
                     </div>
                     <div id="mainChart" class="flex-1 w-full"></div>
@@ -147,7 +150,7 @@
         let klineData = [], liveCandle = null, lastPointCount = 0;
         let lastPrices = {}, toastTimeout;
         let apiBaseUrl = "http://127.0.0.1:5000"; 
-        let triggeredAlerts = new Set(); // 记录已在大屏发声报警的藏品防重复
+        let triggeredAlerts = new Set(); 
 
         window.onload = () => {
             initChart();
@@ -156,25 +159,23 @@
             if(localStorage.getItem('xmeta_alerts')) { userAlerts = JSON.parse(localStorage.getItem('xmeta_alerts')); renderAlertTags(); }
         };
 
-        // 纯 JS 生成的高频警报音效
         function playAlertSound() {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(800, ctx.currentTime);
-            gain.gain.setValueAtTime(1, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.5);
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+            } catch(e) {}
         }
 
         function showToast(msg, isWarning=false) {
             const toast = document.getElementById('toast-msg');
             document.getElementById('toast-text').innerText = msg;
-            toast.className = `fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 ${isWarning ? 'bg-up' : 'bg-brand'} text-white px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none`;
+            toast.className = `fixed bottom-10 right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 ${isWarning ? 'bg-up' : 'bg-brand'} text-white px-6 py-4 rounded-2xl shadow-2xl font-bold flex items-center gap-3 pointer-events-none`;
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => { toast.classList.replace('translate-y-0', 'translate-y-20'); toast.classList.replace('opacity-100', 'opacity-0'); }, 3000);
         }
@@ -194,12 +195,11 @@
 
             setInterval(async () => {
                 try {
-                    const res = await fetch(`${apiBaseUrl}/prices`);
+                    const res = await fetch(`${apiBaseUrl}/prices`, { cache: 'no-cache' });
                     const result = await res.json();
                     if (result.status === 'success') {
                         document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-price animate-pulse";
                         document.getElementById('status-text').innerText = "实时同步中 (1s)";
-
                         if (result.history && result.history[currentFrame]) {
                             const newHistory = result.history[currentFrame];
                             if (newHistory.length > lastPointCount) liveCandle = null;
@@ -226,6 +226,9 @@
         function updateUI(result) {
             const list = document.getElementById('price-list');
             let sumPrice = 0, totalMarket = 0, totalMarketYtd = 0, totalDeal = 0, totalDealAmt = 0, totalDealAmtYtd = 0;
+            
+            // 使用文档碎片或一次性 HTML 拼接，减少布局抖动
+            let htmlBuffer = [];
 
             result.data.forEach(item => {
                 sumPrice += item.price;
@@ -236,59 +239,45 @@
                 totalDealAmtYtd += item.dealRate > -99.9 ? (item.dealAmount / (1 + item.dealRate / 100)) : item.dealAmount;
 
                 let safeId = item.id || encodeURIComponent(item.name).replace(/%/g, '_');
-                let row = document.getElementById('row-' + safeId);
                 let isAlert = userAlerts.some(a => item.name.includes(a.name) && item.price <= a.price);
 
                 if (isAlert) {
                     let alertKey = item.id + '_' + item.price;
                     if (!triggeredAlerts.has(alertKey)) {
-                        triggeredAlerts.add(alertKey);
-                        playAlertSound();
+                        triggeredAlerts.add(alertKey); playAlertSound();
                         showToast(`🚨 预警触发：${item.name} 跌至 ¥${item.price}`, true);
                     }
                 }
 
                 let safeImgUrl = item.image ? `${apiBaseUrl}/proxy_image?url=${encodeURIComponent(item.image)}` : '';
-
-                if (!row) {
-                    list.insertAdjacentHTML('beforeend', `
-                        <div id="row-${safeId}" class="item-row flex items-center justify-between p-3 rounded-xl border bg-[#12161b] border-white/5 transition-all duration-500">
-                            <div class="flex items-center gap-3 w-1/3 min-w-0">
-                                <div class="w-10 h-10 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 border border-white/5 flex items-center justify-center relative">
-                                    <span class="text-[9px] text-slate-600 font-bold absolute z-0">无图</span>
-                                    <img src="${safeImgUrl}" class="w-full h-full object-cover item-img relative z-10" onerror="this.style.opacity='0';">
-                                </div>
-                                <div class="flex flex-col min-w-0">
-                                    <span class="text-sm font-bold text-gray-200 truncate">${item.name}</span>
-                                    <span id="deal-${safeId}" class="text-[10px] text-gray-500 uppercase mt-0.5">成交 ${item.dealCount}</span>
-                                </div>
+                let priceColor = isAlert ? 'text-up font-black scale-110' : 'text-price';
+                
+                // 采用高性能渲染：如果 ID 已存在则直接更新数值，否则全量重绘（目前数据量建议全量快速拼接）
+                htmlBuffer.push(`
+                    <div id="row-${safeId}" class="item-row flex items-center justify-between p-3 rounded-xl border ${isAlert ? 'bg-up/10 border-up/30' : 'bg-[#12161b] border-white/5'} transition-all duration-300">
+                        <div class="flex items-center gap-3 w-1/3 min-w-0">
+                            <div class="w-10 h-10 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 border border-white/5 flex items-center justify-center relative shadow-inner">
+                                <span class="text-[9px] text-gray-700 font-bold absolute">无图</span>
+                                <img src="${safeImgUrl}" class="w-full h-full object-cover relative z-10" onerror="this.style.opacity='0';">
                             </div>
-                            <div class="w-1/3 text-right flex flex-col gap-0.5">
-                                <span id="price-${safeId}" class="font-mono text-sm text-price">¥${item.price.toFixed(2)}</span>
-                                <div id="mrate-${safeId}">${formatRate(item.minRate)}</div>
-                            </div>
-                            <div class="w-1/3 text-right flex flex-col gap-0.5">
-                                <span id="market-${safeId}" class="font-mono text-sm text-price">¥${formatMarketValue(item.marketAmount)}</span>
-                                <div id="trate-${safeId}">${formatRate(item.marketRate)}</div>
+                            <div class="flex flex-col min-w-0">
+                                <span class="text-sm font-bold text-gray-200 truncate">${item.name}</span>
+                                <span class="text-[10px] text-gray-500 uppercase mt-0.5">成交 ${item.dealCount}</span>
                             </div>
                         </div>
-                    `);
-                } else {
-                    document.getElementById(`deal-${safeId}`).innerText = `成交 ${item.dealCount}`;
-                    let pEl = document.getElementById(`price-${safeId}`);
-                    if (lastPrices[safeId] !== item.price) {
-                        pEl.innerText = `¥${item.price.toFixed(2)}`;
-                        pEl.className = `font-mono text-sm ${isAlert ? 'text-up font-black' : 'text-price'}`;
-                        row.classList.add(item.price > lastPrices[safeId] ? 'flash-up' : 'flash-down');
-                        setTimeout(() => row.classList.remove('flash-up', 'flash-down'), 800);
-                        lastPrices[safeId] = item.price;
-                    }
-                    document.getElementById(`market-${safeId}`).innerText = `¥${formatMarketValue(item.marketAmount)}`;
-                    document.getElementById(`mrate-${safeId}`).innerHTML = formatRate(item.minRate);
-                    document.getElementById(`trate-${safeId}`).innerHTML = formatRate(item.marketRate);
-                    row.className = `item-row flex items-center justify-between p-3 rounded-xl border transition-all duration-500 ${isAlert ? 'bg-up/10 border-up shadow-lg shadow-up/10' : 'bg-[#12161b] border-white/5'}`;
-                }
+                        <div class="w-1/3 text-right flex flex-col gap-0.5">
+                            <span class="font-mono text-sm ${priceColor} transition-transform">¥${item.price.toFixed(2)}</span>
+                            <div>${formatRate(item.minRate)}</div>
+                        </div>
+                        <div class="w-1/3 text-right flex flex-col gap-0.5">
+                            <span class="font-mono text-sm text-price">¥${formatMarketValue(item.marketAmount)}</span>
+                            <div>${formatRate(item.marketRate)}</div>
+                        </div>
+                    </div>
+                `);
             });
+
+            list.innerHTML = htmlBuffer.join('');
 
             document.getElementById('global-market-val').innerText = '¥' + formatMarketValue(totalMarket);
             document.getElementById('global-market-rate').innerHTML = formatRate(totalMarketYtd > 0 ? ((totalMarket - totalMarketYtd) / totalMarketYtd) * 100 : 0);
@@ -296,7 +285,6 @@
             document.getElementById('global-deal-rate').innerHTML = formatRate(totalDealAmtYtd > 0 ? ((totalDealAmt - totalDealAmtYtd) / totalDealAmtYtd) * 100 : 0);
             
             const currentAvg = result.data.length > 0 ? Number((sumPrice / result.data.length).toFixed(2)) : 0;
-            
             document.getElementById('avg-price').innerText = currentAvg.toFixed(2);
             document.getElementById('item-count').innerText = result.data.length;
             document.getElementById('sync-time').innerText = result.time;
@@ -315,64 +303,73 @@
 
         function switchFrame(frame) {
             currentFrame = frame; liveCandle = null;
-            ['1m', '5m', '1h', '1d'].forEach(f => {
-                document.getElementById(`btn-${f}`).className = f === frame ? "px-3 py-1 rounded-md text-xs font-bold tab-btn-active transition-all" : "px-3 py-1 rounded-md text-xs font-bold text-gray-500 transition-all";
+            ['1m', '5m', '1h'].forEach(f => {
+                document.getElementById(`btn-${f}`).className = f === frame ? "px-3 py-1 rounded-md text-xs font-bold tab-btn-active" : "px-3 py-1 rounded-md text-xs font-bold text-gray-500";
             });
             renderKLine();
         }
 
         function renderKLine() {
             let displayData = [...klineData];
-            if (liveCandle && liveCandle[0] > 0) displayData.push([...liveCandle]);
+            if (liveCandle && liveCandle[0] > 0) {
+                // 深度克隆原始数据，防止 ECharts 修改引用导致渲染错位
+                displayData.push([
+                    parseFloat(liveCandle[0].toFixed(2)), 
+                    parseFloat(liveCandle[1].toFixed(2)), 
+                    parseFloat(liveCandle[2].toFixed(2)), 
+                    parseFloat(liveCandle[3].toFixed(2))
+                ]);
+            }
 
             if (!displayData.length) return;
             const allValues = displayData.flatMap(d => d);
-            const minP = Math.min(...allValues), maxP = Math.max(...allValues), pad = (maxP - minP) * 0.15 || 0.5;
+            const minP = Math.min(...allValues), maxP = Math.max(...allValues), pad = (maxP - minP) * 0.1 || 0.2;
             
+            // 🚨 核心修复：现价线直接使用最后一根柱子的收盘数值，强制绑定
             const lastCandle = displayData[displayData.length - 1];
             const currentClose = lastCandle[1];
 
             chartInstance.setOption({
-                animation: false, 
+                animation: false,
                 xAxis: { data: new Array(displayData.length).fill('') },
                 yAxis: { min: (minP - pad).toFixed(2), max: (maxP + pad).toFixed(2) },
                 series: [{ 
-                    animation: false, 
-                    animationDurationUpdate: 0, 
+                    animation: false,
+                    animationDurationUpdate: 0,
                     data: displayData, 
                     markLine: { 
                         symbol: ['none', 'none'], 
                         data: [{ yAxis: currentClose }], 
                         animation: false, 
-                        lineStyle: { color: '#ff4d4f', type: 'dashed' }, 
-                        label: { show: true, position: 'end', formatter: '现价: ¥{c}', backgroundColor: '#ff4d4f', color: '#fff', padding: [2, 4], borderRadius: 4 } 
+                        lineStyle: { color: '#ff4d4f', type: 'dashed', width: 1.5, cap: 'butt' }, 
+                        label: { show: true, position: 'end', formatter: '¥{c}', backgroundColor: '#ff4d4f', color: '#fff', padding: [3, 6], borderRadius: 4, fontWeight: 'bold' } 
                     } 
                 }]
-            });
+            }, { notMerge: false, lazyUpdate: true }); // 优化渲染调度
         }
 
         function initChart() {
             chartInstance = echarts.init(document.getElementById('mainChart'));
             chartInstance.setOption({
-                animation: false, 
+                animation: false,
                 tooltip: { 
                     trigger: 'axis', axisPointer: { type: 'cross' }, 
-                    backgroundColor: 'rgba(18,22,27,0.95)', borderColor: '#3b82f6', textStyle: { color: '#fff', fontSize: 11 }, 
+                    backgroundColor: 'rgba(18,22,27,0.98)', borderColor: '#3b82f6', textStyle: { color: '#fff', fontSize: 11 }, 
                     formatter: p => { 
-                        let v = p[0].value; 
-                        let open = v[1], close = v[2], lowest = v[3], highest = v[4];
+                        let k = p[0].data; 
+                        let open = k[0], close = k[1], lowest = k[2], highest = k[3];
                         let up = close >= open;
-                        return `<div class='p-1'><div class='font-bold text-gray-400 mb-2 border-b border-white/10 flex justify-between'><span>行情详情</span><span class='${up?'text-up':'text-down'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-6 mb-1'>开盘价<span>¥${open.toFixed(2)}</span></div><div class='flex justify-between gap-6 mb-1'>收盘价<span class='${up?'text-up':'text-down'} font-bold'>¥${close.toFixed(2)}</span></div><div class='flex justify-between gap-6 mb-1'>最低价<span>¥${lowest.toFixed(2)}</span></div><div class='flex justify-between gap-6'>最高价<span>¥${highest.toFixed(2)}</span></div></div>` 
+                        return `<div class='p-1'><div class='font-bold text-gray-400 mb-2 border-b border-white/10 flex justify-between gap-8'><span>行情详情</span><span class='${up?'text-up':'text-down'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-6 mb-1'>开盘<span>¥${open.toFixed(2)}</span></div><div class='flex justify-between gap-6 mb-1'>收盘<span class='${up?'text-up':'text-down'} font-bold'>¥${close.toFixed(2)}</span></div><div class='flex justify-between gap-6 mb-1'>最低<span>¥${lowest.toFixed(2)}</span></div><div class='flex justify-between gap-6'>最高<span>¥${highest.toFixed(2)}</span></div></div>` 
                     } 
                 },
-                grid: { left: '2%', right: '2%', bottom: '5%', top: '5%', containLabel: true },
+                grid: { left: '3%', right: '8%', bottom: '5%', top: '5%', containLabel: true },
                 xAxis: { type: 'category', data: [], axisLine: { show: false }, splitLine: { show: false } },
                 yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, axisLabel: { color: '#4a5568', fontSize: 10 } },
                 series: [{ 
                     type: 'candlestick', 
                     data: [], 
-                    animation: false, 
-                    itemStyle: { color: '#ff4d4f', color0: '#00d8a6', borderColor: '#ff4d4f', borderColor0: '#00d8a6' } 
+                    animation: false,
+                    itemStyle: { color: '#ff4d4f', color0: '#00d8a6', borderColor: '#ff4d4f', borderColor0: '#00d8a6', borderWidth: 1 } 
                 }]
             });
             window.addEventListener('resize', () => chartInstance.resize());
@@ -383,13 +380,13 @@
             if(n && !isNaN(p)) { userAlerts.push({name: n, price: p}); document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = ""; renderAlertTags(); syncAlerts(); }
         }
         function renderAlertTags() {
-            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `<div class="bg-brand/10 border border-brand/20 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold text-gray-300">${a.name} < ¥${a.price} <i class="ph ph-x cursor-pointer hover:text-up" onclick="userAlerts.splice(${i},1);renderAlertTags();syncAlerts();"></i></div>`).join('');
+            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `<div class="bg-brand/10 border border-brand/20 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold text-gray-300 shadow-sm animate-in fade-in slide-in-from-bottom-1">${a.name} < ¥${a.price} <i class="ph ph-x-circle cursor-pointer hover:text-up transition-colors" onclick="userAlerts.splice(${i},1);renderAlertTags();syncAlerts();"></i></div>`).join('');
             localStorage.setItem('xmeta_alerts', JSON.stringify(userAlerts));
         }
         async function syncAlerts() {
             if(!apiBaseUrl || !isRunning) return;
             const uid = document.getElementById('user-uid').value;
-            try { await fetch(`${apiBaseUrl}/update_alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price })) }) }); showToast("报警配置已同步到云端"); } catch(e){}
+            try { await fetch(`${apiBaseUrl}/update_alerts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price })) }) }); showToast("监控任务已同步"); } catch(e){}
         }
     </script>
 </body>
