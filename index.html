@@ -132,7 +132,7 @@
 
                 <div class="glass-panel p-4 sm:p-6 rounded-2xl h-[300px] md:h-[420px] flex flex-col shadow-xl">
                     <div class="flex justify-between items-center mb-2 sm:mb-4">
-                        <h3 class="text-[10px] sm:text-sm font-black text-gray-400 flex items-center gap-1 sm:gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-line text-brand" style="color: var(--brand)"></i> 实时走势 <span class="text-[9px] font-normal lowercase hidden sm:inline">(可滑动查看历史)</span></h3>
+                        <h3 class="text-[10px] sm:text-sm font-black text-gray-400 flex items-center gap-1 sm:gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-line text-brand" style="color: var(--brand)"></i> 实时走势 <span class="text-[9px] font-normal lowercase hidden sm:inline">(可滑动/缩放历史)</span></h3>
                         <div class="flex gap-1 bg-[#12161b] p-1 rounded-lg border border-white/5 overflow-x-auto">
                             <button onclick="switchFrame('1m')" id="btn-1m" class="px-2 sm:px-3 py-1 rounded-md text-[9px] sm:text-xs font-bold tab-btn-active shrink-0">1分</button>
                             <button onclick="switchFrame('5m')" id="btn-5m" class="px-2 sm:px-3 py-1 rounded-md text-[9px] sm:text-xs font-bold text-gray-500 shrink-0">5分</button>
@@ -140,7 +140,7 @@
                             <button onclick="switchFrame('1d')" id="btn-1d" class="px-2 sm:px-3 py-1 rounded-md text-[9px] sm:text-xs font-bold text-gray-500 shrink-0">日线</button>
                         </div>
                     </div>
-                    <div id="mainChart" class="flex-1 w-full relative -left-2 sm:left-0"></div>
+                    <div id="mainChart" class="flex-1 w-full relative"></div>
                 </div>
             </div>
         </main>
@@ -150,14 +150,9 @@
         let isRunning = false, userAlerts = [], chartInstance = null, currentFrame = '1m';
         let klineData = [], liveCandle = null, lastPointCount = 0;
         let lastPrices = {}, toastTimeout, apiBaseUrl = "", fetchLock = false; 
-        let lastHistory = null; 
-        let lastResultData = null; 
+        let lastHistory = null, lastResultData = null; 
         
-        // 🚀 智能锁开关，用于判断切换周期时是否强制重定位
         let needResetZoom = true; 
-        let isUserScrollingChart = false;
-
-        // 🚀 彻底抛弃 LocalStorage 记忆任务，每次刷新网页回归白板
         let triggeredAlerts = new Set(); 
 
         function startApp() {
@@ -196,7 +191,6 @@
         async function fetchPricesData() {
             if (fetchLock) return;
             fetchLock = true;
-
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -206,69 +200,46 @@
                     cache: 'no-cache',
                     mode: 'cors',
                     signal: controller.signal,
-                    headers: { 
-                        'Accept': 'application/json',
-                        'cpolar-skip-browser-warning': 'true',
-                        'ngrok-skip-browser-warning': 'true'
-                    }
+                    headers: { 'Accept': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' }
                 });
-                
                 clearTimeout(timeoutId);
-
-                if (!res.ok) throw new Error(`HTTP状态码: ${res.status}`);
                 const result = await res.json();
-                
                 if (result.status === 'success') {
                     document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-[#00d8a6] animate-pulse shrink-0";
                     document.getElementById('status-text').innerText = "数据同步中";
-                    
                     lastHistory = result.history; 
                     lastResultData = result; 
 
                     if (result.history && result.history[currentFrame]) {
-                        const newHistory = result.history[currentFrame];
-                        if (newHistory.length > lastPointCount) liveCandle = null;
-                        klineData = newHistory; lastPointCount = newHistory.length;
+                        klineData = result.history[currentFrame];
+                        lastPointCount = klineData.length;
                     }
                     updateUI(result);
                 }
             } catch (e) { 
                 clearTimeout(timeoutId);
                 document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-[#ff4d4f] shrink-0";
-                let displayMsg = "连接失败";
-                if (e.name === 'AbortError') displayMsg = "连接超时(网络卡顿)";
-                else if (e.name === 'TypeError') displayMsg = "被拦截(检查HTTPS)";
-                else if (e.message && e.message.includes('Unexpected token')) displayMsg = "拦截页(需访问验证)";
-                document.getElementById('status-text').innerText = displayMsg;
-            } finally {
-                fetchLock = false;
-            }
+                document.getElementById('status-text').innerText = "链路异常 (重连中)";
+            } finally { fetchLock = false; }
         }
 
         async function toggleMonitor() {
             if (isRunning) return;
             const uid = document.getElementById('user-uid').value.trim();
             if(!uid) return alert("请先填写 UID");
-            
             let rawUrl = document.getElementById('api-url').value.trim().replace(/\/$/, "");
             if (location.protocol === 'https:' && rawUrl.startsWith('http://')) {
-                showToast("协议拦截：请填写 https:// 开头的 Cpolar 隧道地址", true);
-                document.getElementById('status-text').innerText = "协议不匹配 (Mixed Content)";
                 rawUrl = rawUrl.replace('http://', 'https://');
                 document.getElementById('api-url').value = rawUrl;
             }
-
             apiBaseUrl = rawUrl;
             localStorage.setItem('xmeta_url', apiBaseUrl);
             localStorage.setItem('xmeta_uid', uid);
             isRunning = true;
-            
-            document.getElementById('start-btn').innerText = "连接中...";
+            document.getElementById('start-btn').innerText = "雷达在线中";
             document.getElementById('start-btn').disabled = true;
             syncAlerts();
-
             fetchPricesData();
-            document.getElementById('start-btn').innerText = "雷达探测中";
             setInterval(fetchPricesData, 2000);
         }
 
@@ -287,10 +258,11 @@
         function updateUI(result) {
             const list = document.getElementById('price-list');
             let sumPrice = 0, totalMarket = 0, totalMarketYtd = 0, totalDeal = 0, totalDealAmt = 0, totalDealAmtYtd = 0;
+            let validPricesCount = 0;
             let htmlBuffer = [];
 
             result.data.forEach(item => {
-                sumPrice += item.price;
+                if (item.price > 0) { sumPrice += item.price; validPricesCount++; }
                 totalMarket += item.marketAmount;
                 totalDeal += item.dealCount;
                 totalDealAmt += item.dealAmount;
@@ -298,45 +270,23 @@
                 totalDealAmtYtd += item.dealRate > -99.9 ? (item.dealAmount / (1 + item.dealRate / 100)) : item.dealAmount;
 
                 let safeId = item.id || encodeURIComponent(item.name).replace(/%/g, '_');
-                let isAlert = false;
+                let isAlert = userAlerts.some(a => item.name.includes(a.name) && item.price <= a.price);
 
-                userAlerts.forEach(a => {
-                    if (item.name.includes(a.name) && item.price <= a.price) {
-                        isAlert = true;
-                        let alertKey = a.name + '_' + a.price + '_' + safeId;
-                        if (!triggeredAlerts.has(alertKey)) {
-                            triggeredAlerts.add(alertKey);
-                            playAlertSound();
-                            showToast(`🚨 预警：${item.name} 跌至 ¥${item.price}`, true);
-                            
-                            const uid = document.getElementById('user-uid').value.trim();
-                            if (uid.length > 5) {
-                                fetch('https://wxpusher.zjiecode.com/api/send/message', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        appToken: "AT_Mh04xZCEy4ivmetmCkfu72nP6QEKrNNF", 
-                                        content: `<div style="padding: 15px; background: #fff1f2; border-radius: 10px; border: 1px solid #fecdd3;"><h2 style="color: #e11d48; margin-top: 0;">🚨 XM 降价预警</h2><p>您监控的藏品 <b>【${item.name}】</b> 触达目标价！</p><p>当前最低价: <span style="color: #e11d48; font-size: 24px; font-weight: bold;">¥${item.price.toFixed(2)}</span></p></div>`,
-                                        summary: `🚨 预警：${item.name} 跌至 ¥${item.price}`,
-                                        contentType: 2, 
-                                        uids: [uid]
-                                    })
-                                }).catch(e => console.log('WxPusher error', e));
-                            }
-                        }
+                if (isAlert) {
+                    let alertKey = item.name + '_' + item.price + '_' + safeId;
+                    if (!triggeredAlerts.has(alertKey)) {
+                        triggeredAlerts.add(alertKey);
+                        playAlertSound();
+                        showToast(`🚨 预警：${item.name} 跌至 ¥${item.price}`, true);
                     }
-                });
+                }
 
-                // 🚀 核心优化1：彻底抛弃 proxy_image 代理，恢复直连 CDN 图片，并加上懒加载
-                let safeImgUrl = item.image || '';
-                let priceStyle = isAlert ? 'color: var(--up); font-weight: 900;' : 'color: var(--price);';
-                
                 htmlBuffer.push(`
                     <div id="row-${safeId}" class="item-row flex items-center justify-between p-2.5 sm:p-3 rounded-xl border ${isAlert ? 'bg-[#ff4d4f]/10 border-[#ff4d4f]/30' : 'bg-[#12161b] border-white/5'} transition-all duration-300 gap-1 sm:gap-2">
                         <div class="flex items-center gap-2 sm:gap-3 w-[45%] sm:w-1/3 min-w-0">
                             <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 border border-white/5 flex items-center justify-center relative shadow-inner">
                                 <span class="text-[8px] sm:text-[9px] text-gray-700 font-bold absolute">无图</span>
-                                <img src="${safeImgUrl}" loading="lazy" decoding="async" class="w-full h-full object-cover relative z-10" onerror="this.style.opacity='0';">
+                                <img src="${item.image || ''}" loading="lazy" decoding="async" class="w-full h-full object-cover relative z-10" onerror="this.style.opacity='0';">
                             </div>
                             <div class="flex flex-col min-w-0">
                                 <span class="text-xs sm:text-sm font-bold text-gray-200 truncate">${item.name}</span>
@@ -344,11 +294,11 @@
                             </div>
                         </div>
                         <div class="w-[25%] sm:w-1/3 text-right flex flex-col gap-0.5">
-                            <span class="font-mono text-xs sm:text-sm" style="${priceStyle}">¥${item.price.toFixed(2)}</span>
+                            <span class="font-mono text-xs sm:text-sm ${isAlert?'text-[#ff4d4f] font-black':'text-[#00d8a6]'}">¥${item.price.toFixed(2)}</span>
                             <div>${formatRate(item.minRate)}</div>
                         </div>
                         <div class="w-[30%] sm:w-1/3 text-right flex flex-col gap-0.5">
-                            <span class="font-mono text-[11px] sm:text-sm text-[#00d8a6]">¥${formatMarketValue(item.marketAmount)}</span>
+                            <span class="font-mono text-[11px] sm:text-sm text-slate-400">¥${formatMarketValue(item.marketAmount)}</span>
                             <div>${formatRate(item.marketRate)}</div>
                         </div>
                     </div>
@@ -361,12 +311,15 @@
             document.getElementById('global-deal-val').innerText = totalDeal;
             document.getElementById('global-deal-rate').innerHTML = formatRate(totalDealAmtYtd > 0 ? ((totalDealAmt - totalDealAmtYtd) / totalDealAmtYtd) * 100 : 0);
             
-            const currentAvg = result.data.length > 0 ? Number((sumPrice / result.data.length).toFixed(2)) : 0;
+            const currentAvg = validPricesCount > 0 ? Number((sumPrice / validPricesCount).toFixed(2)) : 0;
             document.getElementById('avg-price').innerText = currentAvg.toFixed(2);
             document.getElementById('item-count').innerText = result.data.length;
             document.getElementById('sync-time').innerText = result.time;
 
-            if (currentAvg > 0) {
+            if (result.temp && result.temp[currentFrame]) {
+                let tc = result.temp[currentFrame];
+                liveCandle = [tc.o, tc.c, tc.l, tc.h];
+            } else if (currentAvg > 0) {
                 if (!liveCandle || liveCandle[0] === 0) liveCandle = [currentAvg, currentAvg, currentAvg, currentAvg];
                 else { liveCandle[1] = currentAvg; liveCandle[3] = Math.max(liveCandle[3], currentAvg); liveCandle[2] = Math.min(liveCandle[2], currentAvg); }
             }
@@ -379,13 +332,10 @@
                 const btn = document.getElementById(`btn-${f}`);
                 if (btn) btn.className = f === frame ? "px-2 sm:px-3 py-1 rounded-md text-[9px] sm:text-xs font-bold tab-btn-active shrink-0" : "px-2 sm:px-3 py-1 rounded-md text-[9px] sm:text-xs font-bold text-gray-500 shrink-0";
             });
-
-            if (lastHistory && lastHistory[frame]) {
-                klineData = lastHistory[frame];
-                lastPointCount = klineData.length;
-            } else {
-                klineData = [];
-                lastPointCount = 0;
+            if (lastHistory && lastHistory[frame]) { klineData = lastHistory[frame]; lastPointCount = klineData.length; } else { klineData = []; lastPointCount = 0; }
+            if (lastResultData && lastResultData.temp && lastResultData.temp[frame]) {
+                let tc = lastResultData.temp[frame];
+                liveCandle = [tc.o, tc.c, tc.l, tc.h];
             }
             
             needResetZoom = true;
@@ -395,170 +345,134 @@
         function renderKLine() {
             let displayData = [...klineData];
             if (liveCandle && liveCandle[0] > 0) {
-                displayData.push([parseFloat(liveCandle[0].toFixed(2)), parseFloat(liveCandle[1].toFixed(2)), parseFloat(liveCandle[2].toFixed(2)), parseFloat(liveCandle[3].toFixed(2))]);
+                displayData.push([liveCandle[0], liveCandle[1], liveCandle[2], liveCandle[3]]);
             }
+            if (!displayData.length || !chartInstance) return;
 
-            if (!displayData.length) {
-                if (chartInstance) {
-                    chartInstance.setOption({ xAxis: { data: [] }, series: [{ data: [], markLine: { data: [] } }] });
-                }
-                return;
-            }
-
-            if (!chartInstance) return;
-            const validData = displayData.filter(d => d && d !== '-');
-            const allValues = validData.flatMap(d => d);
-            const minP = Math.min(...allValues), maxP = Math.max(...allValues), pad = (maxP - minP) * 0.1 || 0.2;
-            const currentClose = validData[validData.length - 1][1];
-            
             const isMobile = window.innerWidth < 640;
-            const maxVisibleCandles = isMobile ? 15 : 30;
+            const defaultWindowBars = isMobile ? 15 : 30; // 默认显示的柱子根数
             const total = displayData.length;
             
-            let renderData = displayData;
+            let xAxisData = [];
+            let seriesData = [];
 
-            // 🚀 核心优化2：修正左侧对齐与占位逻辑。当数据不够时用 null 填充左侧，让数据靠右
-            if (total < maxVisibleCandles) {
-                let padCount = maxVisibleCandles - total;
-                let padArr = new Array(padCount).fill(null); 
-                renderData = padArr.concat(displayData);
+            // 🚀 核心优化1：绝对定位。不再填充空 '-'，直接生成真实数据数组
+            for (let i = 0; i < displayData.length; i++) {
+                xAxisData.push(''); 
+                seriesData.push([displayData[i][0], displayData[i][1], displayData[i][2], displayData[i][3]]);
             }
             
-            let xAxisData = new Array(renderData.length).fill('');
+            const validData = displayData.filter(d => d && d[0] > 0);
+            let minP = Math.min(...validData.map(d => d[2])), maxP = Math.max(...validData.map(d => d[3]));
+            let pad = (maxP - minP) * 0.1 || 0.2;
+            let currentClose = displayData[displayData.length - 1][1];
+
+            // 🚀 核心优化2：动态窗口锁定算法
+            let currentOption = chartInstance.getOption();
+            let isAtRight = true;
+            let userSpan = defaultWindowBars; // 用户缩放后的柱子根数
+            let currentStartIdx = 0;
+            let currentEndIdx = total;
+
+            if (currentOption && currentOption.dataZoom && currentOption.dataZoom[0]) {
+                let dz = currentOption.dataZoom[0];
+                // 探测当前滑块所处的坐标索引
+                currentStartIdx = Math.round(dz.startValue);
+                currentEndIdx = Math.round(dz.endValue);
+                userSpan = Math.max(2, currentEndIdx - currentStartIdx);
+                // 判定：如果用户正看着最后那一两根柱子，说明在“跟随模式”
+                isAtRight = dz.endValue >= (total - 2); 
+            }
+
+            let finalZoom = [];
+            // 情况A：切换了周期（1分变日线），强制重置
+            if (needResetZoom) {
+                let end = total;
+                let start = Math.max(0, end - defaultWindowSizeManual(total, defaultWindowBars));
+                finalZoom = [{ startValue: start, endValue: end }, { startValue: start, endValue: end }];
+                needResetZoom = false;
+            } 
+            // 情况B：用户正在看最新行情（跟随模式），刷新时保持用户缩放比例，并推到最右侧
+            else if (isAtRight) {
+                let end = total;
+                let start = Math.max(0, end - userSpan);
+                finalZoom = [{ startValue: start, endValue: end }, { startValue: start, endValue: end }];
+            } 
+            // 情况C：用户在看历史（锁定模式），刷新时不改变任何缩放位置
+            else {
+                finalZoom = [{ startValue: currentStartIdx, endValue: currentEndIdx }, { startValue: currentStartIdx, endValue: currentEndIdx }];
+            }
 
             let option = {
                 animation: false,
                 xAxis: { data: xAxisData },
-                yAxis: { 
-                    min: (minP - pad).toFixed(2), 
-                    max: (maxP + pad).toFixed(2)
-                },
+                yAxis: { min: (minP - pad).toFixed(2), max: (maxP + pad).toFixed(2) },
+                dataZoom: finalZoom,
                 series: [{ 
-                    animation: false, animationDurationUpdate: 0, data: renderData, 
+                    type: 'candlestick', 
+                    data: seriesData,
+                    itemStyle: { color: '#ff4d4f', color0: '#00d8a6', borderColor: '#ff4d4f', borderColor0: '#00d8a6', borderWidth: 1.5 },
                     markLine: { 
-                        symbol: ['none', 'none'], data: [{ yAxis: currentClose }], animation: false, 
-                        lineStyle: { color: '#ff4d4f', type: 'dashed', width: 1.5, cap: 'butt' }, 
-                        label: { show: true, position: 'end', formatter: '¥{c}', backgroundColor: '#ff4d4f', color: '#fff', padding: isMobile ? [2, 4] : [3, 6], borderRadius: 4, fontWeight: 'bold', fontSize: isMobile ? 8 : 12 } 
-                    } 
+                        symbol: ['none', 'none'], data: [{ yAxis: currentClose }], animation: false,
+                        lineStyle: { color: '#ff4d4f', type: 'dashed', width: 1.5 },
+                        label: { show: true, position: 'end', formatter: '¥{c}', backgroundColor: '#ff4d4f', color: '#fff', padding: [3, 6], borderRadius: 4, fontWeight: 'bold' }
+                    }
                 }]
             };
 
-            // 🚀 核心优化3：智能缩放锁定。探测当前 ECharts 真正的滑块位置。
-            let currentOption = chartInstance.getOption();
-            let isAtRightEdge = true;
-            let currentWindowSize = maxVisibleCandles;
-
-            if (currentOption && currentOption.dataZoom && currentOption.dataZoom.length > 0) {
-                let dz = currentOption.dataZoom[0];
-                isAtRightEdge = dz.end >= 99; 
-                if (dz.endValue != null && dz.startValue != null) {
-                    currentWindowSize = dz.endValue - dz.startValue;
-                }
-            }
-
-            if (needResetZoom || isAtRightEdge) {
-                let endV = renderData.length;
-                let startV = Math.max(0, endV - currentWindowSize);
-                
-                if (needResetZoom) {
-                    startV = Math.max(0, endV - maxVisibleCandles); 
-                }
-                
-                option.dataZoom = [
-                    { startValue: startV, endValue: endV },
-                    { startValue: startV, endValue: endV }
-                ];
-                needResetZoom = false; 
-            }
-
             chartInstance.setOption(option, { notMerge: false, lazyUpdate: true });
+        }
+
+        // 辅助：获取切换时默认该显示的宽度
+        function defaultWindowSizeManual(total, def) {
+            return Math.min(total, def);
         }
 
         function initChart() {
             const chartDom = document.getElementById('mainChart');
             if (!chartDom) return;
             chartInstance = echarts.init(chartDom);
-            
             const isMobile = window.innerWidth < 640;
-
             chartInstance.setOption({
                 animation: false,
                 tooltip: { 
                     trigger: 'axis', axisPointer: { type: 'cross' }, 
-                    backgroundColor: 'rgba(18,22,27,0.98)', borderColor: '#3b82f6', textStyle: { color: '#fff', fontSize: isMobile ? 9 : 11 }, 
-                    formatter: p => { 
-                        if (!p || !p[0]) return '';
-                        let k = p[0].data; 
-                        if(!k || k === '-') return '';
-                        let up = k[1] >= k[0];
-                        return `<div class='p-1'><div class='font-bold text-gray-400 mb-1 sm:mb-2 border-b border-white/10 flex justify-between gap-4 sm:gap-8'><span>行情详情</span><span class='${up?'text-[#ff4d4f]':'text-[#00d8a6]'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-4 sm:gap-6 mb-0.5 sm:mb-1'>开盘<span>¥${k[0].toFixed(2)}</span></div><div class='flex justify-between gap-4 sm:gap-6 mb-0.5 sm:mb-1'>收盘<span class='${up?'text-[#ff4d4f]':'text-[#00d8a6]'} font-bold'>¥${k[1].toFixed(2)}</span></div><div class='flex justify-between gap-4 sm:gap-6 mb-0.5 sm:mb-1'>最低<span>¥${k[2].toFixed(2)}</span></div><div class='flex justify-between gap-4 sm:gap-6'>最高<span>¥${k[3].toFixed(2)}</span></div></div>` 
-                    } 
+                    backgroundColor: 'rgba(18,22,27,0.98)', borderColor: '#3b82f6', textStyle: { color: '#fff', fontSize: 11 },
+                    formatter: p => {
+                        if (!p || !p[0] || !p[0].value || p[0].value[1] === '-') return '';
+                        let d = p[0].value;
+                        let open = d[1], close = d[2], low = d[3], high = d[4];
+                        let up = close >= open;
+                        return `<div class='p-1'><div class='font-bold text-gray-400 mb-2 border-b border-white/10 flex justify-between gap-8'><span>详情</span><span class='${up?'text-[#ff4d4f]':'text-[#00d8a6]'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-6 mb-1'>开盘<span>¥${open.toFixed(2)}</span></div><div class='flex justify-between gap-6 mb-1'>收盘<span class='font-bold'>¥${close.toFixed(2)}</span></div><div class='flex justify-between gap-6 mb-1'>最低<span>¥${low.toFixed(2)}</span></div><div class='flex justify-between gap-6'>最高<span>¥${high.toFixed(2)}</span></div></div>`;
+                    }
                 },
                 grid: { left: isMobile ? '1%' : '3%', right: isMobile ? '12%' : '8%', bottom: '8%', top: '5%', containLabel: true },
                 xAxis: { type: 'category', data: [], axisLine: { show: false }, splitLine: { show: false } },
                 yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, axisLabel: { color: '#4a5568', fontSize: isMobile ? 8 : 10 } },
-                
-                dataZoom: [
-                    { type: 'inside', xAxisIndex: 0, filterMode: 'filter' },
-                    { 
-                        type: 'slider', 
-                        xAxisIndex: 0, 
-                        show: true, 
-                        height: 6, 
-                        bottom: 0, 
-                        borderColor: 'transparent', 
-                        backgroundColor: 'rgba(255,255,255,0.05)', 
-                        fillerColor: 'rgba(59, 130, 246, 0.4)', 
-                        handleStyle: { opacity: 0 }, 
-                        textStyle: { color: 'transparent' } 
-                    }
-                ],
-                series: [{ type: 'candlestick', data: [], animation: false, itemStyle: { color: '#ff4d4f', color0: '#00d8a6', borderColor: '#ff4d4f', borderColor0: '#00d8a6', borderWidth: 1 } }]
+                dataZoom: [ { type: 'inside', xAxisIndex: 0 }, { type: 'slider', xAxisIndex: 0, height: 6, bottom: 0, borderColor: 'transparent', backgroundColor: 'rgba(255,255,255,0.05)', fillerColor: 'rgba(59, 130, 246, 0.4)', handleStyle: { opacity: 0 }, textStyle: { color: 'transparent' } } ],
+                series: [{ type: 'candlestick', data: [] }]
             });
-
-            window.addEventListener('resize', () => {
-                if (chartInstance) {
-                    chartInstance.resize();
-                    renderKLine(); 
-                }
-            });
+            window.addEventListener('resize', () => { if (chartInstance) chartInstance.resize(); });
         }
 
         function addAlert() {
             const n = document.getElementById('alert-name').value.trim(), p = parseFloat(document.getElementById('alert-price').value);
             if(n && !isNaN(p)) { 
                 userAlerts.push({name: n, price: p}); 
-                document.getElementById('alert-name').value = ""; 
-                document.getElementById('alert-price').value = ""; 
-                renderAlertTags(); 
-                syncAlerts(); 
-                
-                if (lastResultData) {
-                    updateUI(lastResultData);
-                }
+                document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = ""; 
+                renderAlertTags(); syncAlerts(); 
+                if (lastResultData) updateUI(lastResultData);
             }
         }
-        
-        function removeAlert(i) {
-            userAlerts.splice(i, 1);
-            renderAlertTags();
-            syncAlerts();
-        }
-
+        function removeAlert(i) { userAlerts.splice(i, 1); renderAlertTags(); syncAlerts(); }
         function renderAlertTags() {
             document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `<div class="bg-[#3b82f6]/10 border border-[#3b82f6]/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs font-bold text-gray-300 shadow-sm">${a.name} < ¥${a.price} <i class="ph ph-x-circle cursor-pointer hover:text-[#ff4d4f] transition-colors" onclick="removeAlert(${i})"></i></div>`).join('');
         }
-        
         function syncAlerts() {
             if(!apiBaseUrl || !isRunning) return;
             const uid = document.getElementById('user-uid').value;
-            showToast("任务已部署至边缘节点");
-            fetch(`${apiBaseUrl}/update_alerts`, { 
-                method: 'POST', 
-                mode: 'cors', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price })) }) 
-            }).catch(e => console.log("静默同步失败"));
+            showToast("预警已同步");
+            fetch(`${apiBaseUrl}/update_alerts`, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price })) }) }).catch(e => console.log("同步延迟"));
         }
     </script>
 </body>
