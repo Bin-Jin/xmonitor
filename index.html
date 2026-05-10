@@ -64,7 +64,6 @@
     </div>
 
     <div class="max-w-[1600px] mx-auto space-y-4 sm:space-y-6">
-        <!-- 头部数据区 -->
         <header class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch">
             <div class="lg:col-span-1 glass-panel p-5 sm:p-6 rounded-2xl flex flex-col justify-between shadow-xl">
                 <div class="flex items-center gap-4">
@@ -154,7 +153,6 @@
         let lastHistory = null; 
         let isUserScrollingChart = false;
 
-        // 🚀 核心优化3：加入已触发警报的本地存储锁，防止刷新重复发送
         let triggeredAlerts = new Set(JSON.parse(localStorage.getItem('xmeta_triggered') || '[]'));
 
         function startApp() {
@@ -195,11 +193,16 @@
             if (fetchLock) return;
             fetchLock = true;
 
+            // 🚀 核心优化1：增加 5 秒超时强制熔断机制，防止 Cpolar 丢包导致长达2分钟的“假死”
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
             try {
                 const res = await fetch(`${apiBaseUrl}/prices`, { 
                     method: 'GET',
                     cache: 'no-cache',
                     mode: 'cors',
+                    signal: controller.signal,
                     headers: { 
                         'Accept': 'application/json',
                         'cpolar-skip-browser-warning': 'true',
@@ -207,12 +210,14 @@
                     }
                 });
                 
+                clearTimeout(timeoutId);
+
                 if (!res.ok) throw new Error(`HTTP状态码: ${res.status}`);
                 const result = await res.json();
                 
                 if (result.status === 'success') {
                     document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-[#00d8a6] animate-pulse shrink-0";
-                    document.getElementById('status-text').innerText = "数据同步中 (1s)";
+                    document.getElementById('status-text').innerText = "数据同步中";
                     
                     lastHistory = result.history; 
 
@@ -224,10 +229,12 @@
                     updateUI(result);
                 }
             } catch (e) { 
+                clearTimeout(timeoutId);
                 document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-[#ff4d4f] shrink-0";
                 let displayMsg = "连接失败";
-                if (e.name === 'TypeError') displayMsg = "被拦截(检查HTTPS协议)";
-                else if (e.message.includes('Unexpected token')) displayMsg = "拦截页(需手动访问验证)";
+                if (e.name === 'AbortError') displayMsg = "连接超时(网络卡顿)";
+                else if (e.name === 'TypeError') displayMsg = "被拦截(检查HTTPS)";
+                else if (e.message && e.message.includes('Unexpected token')) displayMsg = "拦截页(需访问验证)";
                 document.getElementById('status-text').innerText = displayMsg;
             } finally {
                 fetchLock = false;
@@ -256,10 +263,12 @@
             document.getElementById('start-btn').disabled = true;
             syncAlerts();
 
-            await fetchPricesData();
+            // 🚀 这里去掉了 await，不再阻塞 UI 按钮的变化
+            fetchPricesData();
             document.getElementById('start-btn').innerText = "雷达探测中";
 
-            setInterval(fetchPricesData, 1000);
+            // 🚀 恢复到 2000 毫秒 (2秒)，避免请求过于密集触发 Cpolar 免费版限制
+            setInterval(fetchPricesData, 2000);
         }
 
         function formatMarketValue(num) {
@@ -294,7 +303,6 @@
                     if (item.name.includes(a.name) && item.price <= a.price) {
                         isAlert = true;
                         
-                        // 🚀 核心优化3：本地缓存锁判断，防止重复发送
                         let alertKey = a.name + '_' + a.price + '_' + safeId;
                         if (!triggeredAlerts.has(alertKey)) {
                             triggeredAlerts.add(alertKey);
@@ -376,6 +384,10 @@
             if (lastHistory && lastHistory[frame]) {
                 klineData = lastHistory[frame];
                 lastPointCount = klineData.length;
+            } else {
+                // 🚀 核心优化2：如果切换过去的周期没有数据（比如日K还没生成），必须强制清空本地变量！
+                klineData = [];
+                lastPointCount = 0;
             }
             renderKLine();
         }
@@ -385,7 +397,16 @@
             if (liveCandle && liveCandle[0] > 0) {
                 displayData.push([parseFloat(liveCandle[0].toFixed(2)), parseFloat(liveCandle[1].toFixed(2)), parseFloat(liveCandle[2].toFixed(2)), parseFloat(liveCandle[3].toFixed(2))]);
             }
-            if (!displayData.length || !chartInstance) return;
+
+            // 🚀 核心优化2补充：如果强制清空后，数组为空，需要给 ECharts 下发清除指令，否则会残留老画面
+            if (!displayData.length) {
+                if (chartInstance) {
+                    chartInstance.setOption({ xAxis: { data: [] }, series: [{ data: [], markLine: { data: [] } }] });
+                }
+                return;
+            }
+
+            if (!chartInstance) return;
             const allValues = displayData.flatMap(d => d);
             const minP = Math.min(...allValues), maxP = Math.max(...allValues), pad = (maxP - minP) * 0.1 || 0.2;
             const currentClose = displayData[displayData.length - 1][1];
@@ -394,7 +415,6 @@
             const maxVisibleCandles = isMobile ? 15 : 30;
             const total = displayData.length;
             
-            // 🚀 核心优化2：动态填补 X 轴数组。即使日 K 只有 1 根，也会把它挤到最左边，而不是拉伸满屏！
             let xAxisData = new Array(total).fill('');
             if (total < maxVisibleCandles) {
                 xAxisData = new Array(maxVisibleCandles).fill('');
@@ -443,6 +463,7 @@
                     formatter: p => { 
                         if (!p || !p[0]) return '';
                         let k = p[0].data; 
+                        if(!k) return '';
                         let up = k[1] >= k[0];
                         return `<div class='p-1'><div class='font-bold text-gray-400 mb-1 sm:mb-2 border-b border-white/10 flex justify-between gap-4 sm:gap-8'><span>行情详情</span><span class='${up?'text-[#ff4d4f]':'text-[#00d8a6]'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-4 sm:gap-6 mb-0.5 sm:mb-1'>开盘<span>¥${k[0].toFixed(2)}</span></div><div class='flex justify-between gap-4 sm:gap-6 mb-0.5 sm:mb-1'>收盘<span class='${up?'text-[#ff4d4f]':'text-[#00d8a6]'} font-bold'>¥${k[1].toFixed(2)}</span></div><div class='flex justify-between gap-4 sm:gap-6 mb-0.5 sm:mb-1'>最低<span>¥${k[2].toFixed(2)}</span></div><div class='flex justify-between gap-4 sm:gap-6'>最高<span>¥${k[3].toFixed(2)}</span></div></div>` 
                     } 
@@ -496,7 +517,6 @@
             if(n && !isNaN(p)) { userAlerts.push({name: n, price: p}); document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = ""; renderAlertTags(); syncAlerts(); }
         }
         
-        // 🚀 修改：现在删除任务时，也会同步清理本地触发缓存，这样以后重新加回来还能报警
         function removeAlert(i) {
             let removed = userAlerts.splice(i, 1)[0];
             let newTriggered = [...triggeredAlerts].filter(key => !key.startsWith(removed.name + '_' + removed.price));
@@ -511,13 +531,10 @@
             localStorage.setItem('xmeta_alerts', JSON.stringify(userAlerts));
         }
         
-        // 🚀 核心优化1：使用静默异步部署，不原地等待网络，消除一切卡顿感
         function syncAlerts() {
             if(!apiBaseUrl || !isRunning) return;
             const uid = document.getElementById('user-uid').value;
-            // 瞬间在网页上提示成功
             showToast("任务已部署至边缘节点");
-            // 后台偷偷连接服务器，不再 await
             fetch(`${apiBaseUrl}/update_alerts`, { 
                 method: 'POST', 
                 mode: 'cors', 
