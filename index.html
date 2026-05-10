@@ -151,10 +151,13 @@
         let klineData = [], liveCandle = null, lastPointCount = 0;
         let lastPrices = {}, toastTimeout, apiBaseUrl = "", fetchLock = false; 
         let lastHistory = null; 
-        let lastResultData = null; // 🚀 保存最近一次全局数据，方便瞬间验证预警
+        let lastResultData = null; 
+        
+        // 🚀 智能锁开关，用于判断切换周期时是否强制重定位
+        let needResetZoom = true; 
         let isUserScrollingChart = false;
 
-        // 🚀 核心优化3：完全抛弃 LocalStorage 记忆任务，每次刷新网页回归白板
+        // 🚀 彻底抛弃 LocalStorage 记忆任务，每次刷新网页回归白板
         let triggeredAlerts = new Set(); 
 
         function startApp() {
@@ -165,7 +168,6 @@
             initChart();
             if(localStorage.getItem('xmeta_url')) document.getElementById('api-url').value = localStorage.getItem('xmeta_url');
             if(localStorage.getItem('xmeta_uid')) document.getElementById('user-uid').value = localStorage.getItem('xmeta_uid');
-            // 注意：不再从 localStorage 加载 userAlerts，保持空白
         }
 
         window.onload = startApp;
@@ -221,7 +223,7 @@
                     document.getElementById('status-text').innerText = "数据同步中";
                     
                     lastHistory = result.history; 
-                    lastResultData = result; // 🚀 更新最近一帧数据
+                    lastResultData = result; 
 
                     if (result.history && result.history[currentFrame]) {
                         const newHistory = result.history[currentFrame];
@@ -301,11 +303,9 @@
                 userAlerts.forEach(a => {
                     if (item.name.includes(a.name) && item.price <= a.price) {
                         isAlert = true;
-                        
                         let alertKey = a.name + '_' + a.price + '_' + safeId;
                         if (!triggeredAlerts.has(alertKey)) {
                             triggeredAlerts.add(alertKey);
-                            
                             playAlertSound();
                             showToast(`🚨 预警：${item.name} 跌至 ¥${item.price}`, true);
                             
@@ -327,7 +327,8 @@
                     }
                 });
 
-                let safeImgUrl = item.image ? `${apiBaseUrl}/proxy_image?url=${encodeURIComponent(item.image)}` : '';
+                // 🚀 核心优化1：彻底抛弃 proxy_image 代理，恢复直连 CDN 图片，并加上懒加载
+                let safeImgUrl = item.image || '';
                 let priceStyle = isAlert ? 'color: var(--up); font-weight: 900;' : 'color: var(--price);';
                 
                 htmlBuffer.push(`
@@ -335,7 +336,7 @@
                         <div class="flex items-center gap-2 sm:gap-3 w-[45%] sm:w-1/3 min-w-0">
                             <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 border border-white/5 flex items-center justify-center relative shadow-inner">
                                 <span class="text-[8px] sm:text-[9px] text-gray-700 font-bold absolute">无图</span>
-                                <img src="${safeImgUrl}" class="w-full h-full object-cover relative z-10" onerror="this.style.opacity='0';">
+                                <img src="${safeImgUrl}" loading="lazy" decoding="async" class="w-full h-full object-cover relative z-10" onerror="this.style.opacity='0';">
                             </div>
                             <div class="flex flex-col min-w-0">
                                 <span class="text-xs sm:text-sm font-bold text-gray-200 truncate">${item.name}</span>
@@ -386,6 +387,8 @@
                 klineData = [];
                 lastPointCount = 0;
             }
+            
+            needResetZoom = true;
             renderKLine();
         }
 
@@ -403,26 +406,25 @@
             }
 
             if (!chartInstance) return;
-            // 过滤掉为了占位用的空数据 '-'，用来准确计算最高最低价
-            const validData = displayData.filter(d => d !== '-');
+            const validData = displayData.filter(d => d && d !== '-');
             const allValues = validData.flatMap(d => d);
             const minP = Math.min(...allValues), maxP = Math.max(...allValues), pad = (maxP - minP) * 0.1 || 0.2;
-            const currentClose = displayData[displayData.length - 1][1];
+            const currentClose = validData[validData.length - 1][1];
             
             const isMobile = window.innerWidth < 640;
             const maxVisibleCandles = isMobile ? 15 : 30;
             const total = displayData.length;
             
-            let xAxisData = new Array(total).fill('');
             let renderData = displayData;
 
-            // 🚀 核心优化1：如果数据条数不足（比如日线刚生成只有1根），在左侧用空白柱子挤压它
+            // 🚀 核心优化2：修正左侧对齐与占位逻辑。当数据不够时用 null 填充左侧，让数据靠右
             if (total < maxVisibleCandles) {
-                xAxisData = new Array(maxVisibleCandles).fill('');
                 let padCount = maxVisibleCandles - total;
-                let padArr = new Array(padCount).fill('-'); 
+                let padArr = new Array(padCount).fill(null); 
                 renderData = padArr.concat(displayData);
             }
+            
+            let xAxisData = new Array(renderData.length).fill('');
 
             let option = {
                 animation: false,
@@ -441,13 +443,32 @@
                 }]
             };
 
-            if (!isUserScrollingChart) {
-                let startV = renderData.length > maxVisibleCandles ? renderData.length - maxVisibleCandles : 0;
+            // 🚀 核心优化3：智能缩放锁定。探测当前 ECharts 真正的滑块位置。
+            let currentOption = chartInstance.getOption();
+            let isAtRightEdge = true;
+            let currentWindowSize = maxVisibleCandles;
+
+            if (currentOption && currentOption.dataZoom && currentOption.dataZoom.length > 0) {
+                let dz = currentOption.dataZoom[0];
+                isAtRightEdge = dz.end >= 99; 
+                if (dz.endValue != null && dz.startValue != null) {
+                    currentWindowSize = dz.endValue - dz.startValue;
+                }
+            }
+
+            if (needResetZoom || isAtRightEdge) {
                 let endV = renderData.length;
+                let startV = Math.max(0, endV - currentWindowSize);
+                
+                if (needResetZoom) {
+                    startV = Math.max(0, endV - maxVisibleCandles); 
+                }
+                
                 option.dataZoom = [
                     { startValue: startV, endValue: endV },
                     { startValue: startV, endValue: endV }
                 ];
+                needResetZoom = false; 
             }
 
             chartInstance.setOption(option, { notMerge: false, lazyUpdate: true });
@@ -495,20 +516,6 @@
                 series: [{ type: 'candlestick', data: [], animation: false, itemStyle: { color: '#ff4d4f', color0: '#00d8a6', borderColor: '#ff4d4f', borderColor0: '#00d8a6', borderWidth: 1 } }]
             });
 
-            chartInstance.on('datazoom', function(params) {
-                let endPercent = 100;
-                if (params.batch && params.batch.length > 0) {
-                    endPercent = params.batch[0].end;
-                } else if (params.end !== undefined) {
-                    endPercent = params.end;
-                }
-                if (endPercent < 99.5) {
-                    isUserScrollingChart = true;
-                } else {
-                    isUserScrollingChart = false;
-                }
-            });
-
             window.addEventListener('resize', () => {
                 if (chartInstance) {
                     chartInstance.resize();
@@ -526,7 +533,6 @@
                 renderAlertTags(); 
                 syncAlerts(); 
                 
-                // 🚀 核心优化2：加入此判断，点击部署后立马拿最新的内存数据对对碰，触发秒发报警
                 if (lastResultData) {
                     updateUI(lastResultData);
                 }
@@ -534,9 +540,7 @@
         }
         
         function removeAlert(i) {
-            let removed = userAlerts.splice(i, 1)[0];
-            let newTriggered = [...triggeredAlerts].filter(key => !key.startsWith(removed.name + '_' + removed.price));
-            triggeredAlerts = new Set(newTriggered);
+            userAlerts.splice(i, 1);
             renderAlertTags();
             syncAlerts();
         }
