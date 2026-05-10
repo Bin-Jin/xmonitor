@@ -72,7 +72,7 @@
                         <i class="ph-fill ph-lightning text-xl sm:text-2xl text-brand" style="color: var(--brand)"></i>
                     </div>
                     <div class="min-w-0">
-                        <h1 class="text-lg sm:text-xl font-black italic tracking-tighter text-white uppercase truncate">XMeta <span class="text-brand" style="color: var(--brand)">Radar</span> Pro</h1>
+                        <h1 class="text-lg sm:text-xl font-black italic tracking-tighter text-white uppercase truncate">XM <span class="text-brand" style="color: var(--brand)">典藏板块数据</span></h1>
                         <div class="flex items-center gap-2"><div id="status-dot" class="w-2 h-2 rounded-full bg-gray-600 shrink-0"></div><span id="status-text" class="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-widest truncate">等待连接...</span></div>
                     </div>
                 </div>
@@ -156,6 +156,7 @@
         let klineData = [], liveCandle = null, lastPointCount = 0;
         let lastPrices = {}, toastTimeout, apiBaseUrl = "", triggeredAlerts = new Set();
         let fetchLock = false; 
+        let lastHistory = null; // 🚀 新增：历史数据缓存池，用于图表无缝秒切
         
         // 🚀 记录图表是否被用户手动滑动了 (滑动时不自动回滚到最右边)
         let isUserScrollingChart = false;
@@ -238,6 +239,9 @@
                     if (result.status === 'success') {
                         document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-[#00d8a6] animate-pulse shrink-0";
                         document.getElementById('status-text').innerText = "数据同步中 (1s)";
+                        
+                        lastHistory = result.history; // 🚀 缓存所有的历史数据，为无缝秒切提供支持
+
                         if (result.history && result.history[currentFrame]) {
                             const newHistory = result.history[currentFrame];
                             if (newHistory.length > lastPointCount) liveCandle = null;
@@ -303,7 +307,7 @@
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     appToken: "AT_Mh04xZCEy4ivmetmCkfu72nP6QEKrNNF", // 你的官方推送 Token
-                                    content: `<div style="padding: 15px; background: #fff1f2; border-radius: 10px; border: 1px solid #fecdd3;"><h2 style="color: #e11d48; margin-top: 0;">🚨 XMeta 降价预警</h2><p>您监控的藏品 <b>【${item.name}】</b> 触达目标价！</p><p>当前最低价: <span style="color: #e11d48; font-size: 24px; font-weight: bold;">¥${item.price.toFixed(2)}</span></p></div>`,
+                                    content: `<div style="padding: 15px; background: #fff1f2; border-radius: 10px; border: 1px solid #fecdd3;"><h2 style="color: #e11d48; margin-top: 0;">🚨 XM 降价预警</h2><p>您监控的藏品 <b>【${item.name}】</b> 触达目标价！</p><p>当前最低价: <span style="color: #e11d48; font-size: 24px; font-weight: bold;">¥${item.price.toFixed(2)}</span></p></div>`,
                                     summary: `🚨 预警：${item.name} 跌至 ¥${item.price}`,
                                     contentType: 2, // 发送富文本 HTML 格式
                                     uids: [uid]
@@ -366,6 +370,12 @@
                 const btn = document.getElementById(`btn-${f}`);
                 if (btn) btn.className = f === frame ? "px-2 sm:px-3 py-1 rounded-md text-[9px] sm:text-xs font-bold tab-btn-active" : "px-2 sm:px-3 py-1 rounded-md text-[9px] sm:text-xs font-bold text-gray-500";
             });
+
+            // 🚀 核心秒切：直接从缓存的历史数据中提取并渲染，无需等待下一次网络轮询
+            if (lastHistory && lastHistory[frame]) {
+                klineData = lastHistory[frame];
+                lastPointCount = klineData.length;
+            }
             renderKLine();
         }
 
@@ -382,8 +392,8 @@
             // 针对手机端调整坐标轴间距
             const isMobile = window.innerWidth < 640;
             
-            // 🚀 定义可视区域显示的 K线柱子数量 (手机 30 根，电脑 60 根)
-            const maxVisibleCandles = isMobile ? 30 : 60;
+            // 🚀 定义可视区域显示的 K线柱子数量 (电脑 30 根，手机 15 根)
+            const maxVisibleCandles = isMobile ? 15 : 30;
             const total = displayData.length;
 
             let option = {
