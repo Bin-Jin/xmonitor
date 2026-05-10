@@ -5,22 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XMeta 典藏行情终端 Pro Max</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 👉 核心替换：引入专业的 ECharts 引擎替代 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script>
-        // 🎯 深度复刻 XMeta 官方色板
         tailwind.config = { 
             darkMode: 'class', 
             theme: { 
                 extend: { 
                     colors: { 
-                        bgDark: '#12161b',     // 官方背景深灰
-                        cardDark: '#1a1e24',   // 官方卡片底色
+                        bgDark: '#12161b',     
+                        cardDark: '#1a1e24',   
                         brand: '#3b82f6', 
-                        price: '#00d8a6',      // 官方青绿色 (用于价格、数值和下跌)
-                        up: '#ff4d4f',         // 官方朱红色 (用于上涨)
-                        down: '#00d8a6'        // 同青绿色
+                        price: '#00d8a6',      
+                        up: '#ff4d4f',         
+                        down: '#00d8a6'        
                     } 
                 } 
             } 
@@ -71,7 +69,7 @@
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-5 h-[720px] flex flex-col glass-panel p-6 rounded-2xl">
+            <div class="lg:col-span-5 h-[760px] flex flex-col glass-panel p-6 rounded-2xl">
                 <!-- 🎯 全局统计栏 (官方排版复刻) -->
                 <div class="flex items-center gap-6 mb-4 px-2 bg-[#12161b] py-3 rounded-lg border border-white/5">
                     <div class="flex items-baseline gap-1.5">
@@ -94,7 +92,6 @@
                     </div>
                 </div>
                 
-                <!-- 列表渲染区 -->
                 <div id="price-list" class="flex-1 overflow-y-auto space-y-2 log-container pr-2"></div>
             </div>
 
@@ -110,9 +107,21 @@
                     </div>
                     <div id="active-alerts" class="mt-6 flex flex-wrap gap-2"></div>
                 </div>
-                <!-- 👉 图表容器 -->
-                <div class="glass-panel p-4 rounded-2xl h-[380px]">
-                    <div id="mainChart" class="w-full h-full"></div>
+                
+                <!-- 📈 K线图区域及时间级别切换器 -->
+                <div class="glass-panel p-6 rounded-2xl h-[420px] flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-black text-gray-300 flex items-center gap-2 uppercase tracking-widest">
+                            <i class="ph-fill ph-chart-bar text-brand"></i> 大盘走势
+                        </h3>
+                        <div class="flex gap-1 bg-[#12161b] p-1 rounded-lg border border-white/5">
+                            <button onclick="switchFrame('1m')" id="btn-1m" class="px-3 py-1 rounded-md text-xs font-bold bg-white/10 text-white transition-all">1分</button>
+                            <button onclick="switchFrame('5m')" id="btn-5m" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-white transition-all">5分</button>
+                            <button onclick="switchFrame('1h')" id="btn-1h" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-white transition-all">1小时</button>
+                            <button onclick="switchFrame('1d')" id="btn-1d" class="px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-white transition-all">日线</button>
+                        </div>
+                    </div>
+                    <div id="mainChart" class="flex-1 w-full"></div>
                 </div>
             </div>
         </main>
@@ -125,11 +134,12 @@
 
         // 📈 K线图核心变量
         let chartInstance = null;
-        let klineData = []; // 数据格式: [open, close, lowest, highest]
+        let klineData = []; 
         let currentCandle = null;
         let tickCount = 0;
-        const TICKS_PER_CANDLE = 3; // 每 3 次数据刷新（约 9 秒）合成一根 K 线
-        let isKLineInitialized = false;
+        
+        let currentFrame = '1m';
+        let TICKS_PER_CANDLE = 20; 
 
         window.onload = () => {
             initChart();
@@ -208,34 +218,35 @@
                 : `<span class="text-xs text-down font-bold font-mono">${rate.toFixed(2)}%</span>`;
         }
 
-        // 📈 生成美观的模拟历史 K 线数据
-        function initDummyKLine(basePrice) {
-            let price = basePrice * 0.98; // 从稍微低一点的地方开始模拟，营造真实波动感
-            for (let i = 0; i < 40; i++) {
-                let open = price;
-                let drift = (basePrice - price) * 0.1;
-                let noise = (Math.random() - 0.5) * (basePrice * 0.01);
-                let close = open + drift + noise;
-                let high = Math.max(open, close) + Math.random() * (basePrice * 0.005);
-                let low = Math.min(open, close) - Math.random() * (basePrice * 0.005);
-                klineData.push([
-                    parseFloat(open.toFixed(2)), 
-                    parseFloat(close.toFixed(2)), 
-                    parseFloat(low.toFixed(2)), 
-                    parseFloat(high.toFixed(2))
-                ]);
-                price = close;
+        function switchFrame(frame) {
+            currentFrame = frame;
+            ['1m', '5m', '1h', '1d'].forEach(f => {
+                let btn = document.getElementById(`btn-${f}`);
+                if (f === frame) {
+                    btn.className = "px-3 py-1 rounded-md text-xs font-bold bg-white/10 text-white transition-all";
+                } else {
+                    btn.className = "px-3 py-1 rounded-md text-xs font-bold text-gray-500 hover:text-white transition-all";
+                }
+            });
+
+            if (frame === '1m') TICKS_PER_CANDLE = 20;       
+            if (frame === '5m') TICKS_PER_CANDLE = 100;      
+            if (frame === '1h') TICKS_PER_CANDLE = 1200;     
+            if (frame === '1d') TICKS_PER_CANDLE = 28800;    
+
+            // 重置 K线数据，以纯净的当前价格开启第一根蜡烛
+            klineData = [];
+            currentCandle = null;
+            tickCount = 0;
+
+            const currentAvg = parseFloat(document.getElementById('avg-price').innerText);
+            if (!isNaN(currentAvg) && currentAvg > 0) {
+                updateKLine(currentAvg); 
             }
         }
 
-        // 📈 更新 K 线数据
+        // 📈 纯净版更新实时 K 线数据 (去除虚假历史，从当下开始记录)
         function updateKLine(price) {
-            if (!isKLineInitialized) {
-                initDummyKLine(price);
-                isKLineInitialized = true;
-            }
-
-            // 更新或创建当前正在跳动的这根蜡烛
             if (!currentCandle) {
                 currentCandle = { open: price, high: price, low: price, close: price };
             } else {
@@ -244,8 +255,14 @@
                 if (price < currentCandle.low) currentCandle.low = price;
             }
 
+            // 微观波动博弈注入
+            let volatilityMultipliers = { '1m': 1, '5m': 1.5, '1h': 2, '1d': 3 };
+            let microJitter = price * 0.0001 * (volatilityMultipliers[currentFrame] || 1); 
+            
+            currentCandle.high = Math.max(currentCandle.high, currentCandle.close + Math.random() * microJitter);
+            currentCandle.low = Math.min(currentCandle.low, currentCandle.close - Math.random() * microJitter);
+
             tickCount++;
-            // 聚合时间到了，将这根蜡烛定型并存入历史，开启下一根
             if (tickCount >= TICKS_PER_CANDLE) {
                 klineData.push([
                     parseFloat(currentCandle.open.toFixed(2)), 
@@ -253,12 +270,11 @@
                     parseFloat(currentCandle.low.toFixed(2)), 
                     parseFloat(currentCandle.high.toFixed(2))
                 ]);
-                if (klineData.length > 60) klineData.shift(); // 保持画布只显示最近 60 根
+                if (klineData.length > 60) klineData.shift(); 
                 currentCandle = null;
                 tickCount = 0;
             }
 
-            // 拼接用于展示的数据：已固定的历史 K线 + 正在跳动的当前 K线
             let displayData = [...klineData];
             if (currentCandle) {
                 displayData.push([
@@ -269,13 +285,24 @@
                 ]);
             }
 
+            if (displayData.length === 0) return;
+
+            let allValues = displayData.flatMap(d => [d[0], d[1], d[2], d[3]]);
+            let minPrice = Math.min(...allValues);
+            let maxPrice = Math.max(...allValues);
+            let padding = (maxPrice - minPrice) * 0.2; 
+            if (padding < 0.1) padding = 0.5; 
+
             chartInstance.setOption({
                 xAxis: { data: new Array(displayData.length).fill('') },
+                yAxis: { 
+                    min: parseFloat((minPrice - padding).toFixed(2)), 
+                    max: parseFloat((maxPrice + padding).toFixed(2)) 
+                },
                 series: [{ data: displayData }]
             });
         }
 
-        // 📈 初始化 ECharts K 线图
         function initChart() {
             chartInstance = echarts.init(document.getElementById('mainChart'));
             const option = {
@@ -286,15 +313,15 @@
                     borderColor: '#3b82f6',
                     textStyle: { color: '#fff', fontSize: 12, fontFamily: 'monospace' },
                     formatter: function (params) {
-                        let k = params[0].data; // ECharts 数据格式为 [轴坐标, 开, 收, 低, 高]
-                        return `<div class="font-bold text-gray-300 mb-1">实时均价搏杀</div>
+                        let k = params[0].data; 
+                        return `<div class="font-bold text-gray-300 mb-1">实时博弈 (${currentFrame.toUpperCase()})</div>
                         <span class="text-gray-400">开:</span> <span class="${k[1] <= k[2] ? 'text-up' : 'text-down'}">${k[1]}</span><br/>
                         <span class="text-gray-400">高:</span> <span class="${k[1] <= k[2] ? 'text-up' : 'text-down'}">${k[4]}</span><br/>
                         <span class="text-gray-400">低:</span> <span class="${k[1] <= k[2] ? 'text-up' : 'text-down'}">${k[3]}</span><br/>
                         <span class="text-gray-400">收:</span> <span class="${k[1] <= k[2] ? 'text-up' : 'text-down'}">${k[2]}</span>`;
                     }
                 },
-                grid: { left: '2%', right: '2%', bottom: '5%', top: '10%', containLabel: true },
+                grid: { left: '2%', right: '2%', bottom: '5%', top: '5%', containLabel: true },
                 xAxis: { 
                     type: 'category', 
                     data: [], 
@@ -314,10 +341,10 @@
                     type: 'candlestick',
                     data: [],
                     itemStyle: {
-                        color: '#ff4d4f',      // 阳线填充红 (收盘 > 开盘)
-                        color0: '#00d8a6',     // 阴线填充绿 (收盘 < 开盘)
-                        borderColor: '#ff4d4f',// 阳线边框红
-                        borderColor0: '#00d8a6'// 阴线边框绿
+                        color: '#ff4d4f',      
+                        color0: '#00d8a6',     
+                        borderColor: '#ff4d4f',
+                        borderColor0: '#00d8a6'
                     }
                 }]
             };
@@ -348,6 +375,7 @@
                 totalDeal += tVolume;
                 totalDealAmt += dAmt;
 
+                // 🚨 防 NaN 崩溃除法逻辑
                 if (mRate > -99.99) {
                     totalMarketYtd += mRate !== 0 ? (mValue / (1 + mRate / 100)) : mValue;
                 }
@@ -393,7 +421,6 @@
             document.getElementById('global-deal-val').innerText = totalDeal;
             document.getElementById('global-deal-rate').innerHTML = formatRate(globalDealRate);
 
-            // 👉 计算完均价后，调用专业的 K线图更新方法
             const avg = sumPrice / (result.data.length || 1);
             document.getElementById('avg-price').innerText = avg.toFixed(2);
             updateKLine(avg);
