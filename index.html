@@ -6,7 +6,7 @@
     <meta name="referrer" content="no-referrer">
     <meta name="color-scheme" content="dark">
     
-    <title>XMeta 典藏藏品行情终端</title>
+    <title>XMeta 典藏行情终端</title>
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' fill='none'%3E%3Cpath d='M30 4L54 16V44L30 56L6 44V16L30 4Z' fill='%233b82f6'/%3E%3Cpath d='M22 30L28 42L42 18' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 
@@ -37,6 +37,8 @@
     </script>
     <style>
         :root { --brand: #3b82f6; --up: #ef4444; --price: #00d8a6; --down: #22c55e; }
+        
+        /* 🚀 彻底隐藏浏览器全局及局部滚动条，保持界面纯净 */
         ::-webkit-scrollbar { width: 0px; height: 0px; display: none; }
         * { scrollbar-width: none; -ms-overflow-style: none; }
 
@@ -115,7 +117,7 @@
                     <div class="min-w-0">
                         <h1 class="text-xl sm:text-2xl font-black tracking-tighter text-white uppercase whitespace-nowrap overflow-visible">
                             <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400">XMeta</span>
-                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 font-black ml-1">典藏藏品大盘</span>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 font-black ml-1">典藏行情大盘</span>
                         </h1>
                         <div class="flex items-center gap-2 mt-1"><div id="status-dot" class="w-2 h-2 rounded-full bg-slate-600 shrink-0 shadow-[0_0_8px_rgba(0,0,0,0)]"></div><span id="status-text" class="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-widest truncate">系统就绪 / 等待授权接入</span></div>
                     </div>
@@ -175,7 +177,7 @@
                 <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl">
                     <h2 class="text-xs sm:text-sm font-black text-slate-300 flex items-center gap-2.5 mb-5 sm:mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand"></i> 藏品价格预警</h2>
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                        <input id="alert-name" type="text" placeholder="输入藏品全称..." class="w-full sm:flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-brand transition-colors min-w-0 shadow-inner">
+                        <input id="alert-name" type="text" placeholder="输入藏品关键字..." class="w-full sm:flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-brand transition-colors min-w-0 shadow-inner">
                         <div class="flex gap-2 sm:gap-3 w-full sm:w-auto">
                             <select id="alert-type" class="shrink-0 bg-slate-900/60 border border-slate-700/50 rounded-xl px-2 sm:px-3 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-brand cursor-pointer shadow-inner">
                                 <option value="down">跌破 ≤</option>
@@ -323,9 +325,7 @@
             startBtn.className = "bg-slate-800 text-slate-500 w-full sm:w-auto px-6 py-2.5 sm:py-3 rounded-xl text-xs font-bold shrink-0 shadow-inner cursor-not-allowed border border-slate-700";
             if (monitorInterval) clearInterval(monitorInterval);
             
-            // 🚀 核心修复 1：连接时强制将本地保存的指令立刻推送给后端，防止重启后丢失
             syncAlerts();
-            
             fetchPricesData(); monitorInterval = setInterval(fetchPricesData, 2000);
         }
 
@@ -344,6 +344,24 @@
         }
 
         function updateUI(result) {
+            if (result.triggered_alerts && result.triggered_alerts.length > 0) {
+                let killedAny = false;
+                result.triggered_alerts.forEach(tid => {
+                    const idx = userAlerts.findIndex(a => a.id === tid);
+                    if (idx !== -1) {
+                        const a = userAlerts[idx];
+                        playAlertSound();
+                        showToast(`🚨 微信通知已送达：${a.name}，任务已销毁`, true);
+                        userAlerts.splice(idx, 1);
+                        killedAny = true;
+                    }
+                });
+                if (killedAny) {
+                    renderAlertTags();
+                    syncAlerts(true);
+                }
+            }
+
             const list = document.getElementById('price-list');
             let sumPrice = 0, totalMarket = 0, totalMarketYtd = 0, totalDeal = 0, totalDealAmt = 0, totalDealAmtYtd = 0;
             let validPricesCount = 0; let htmlBuffer = []; let leaderboardData = []; 
@@ -360,17 +378,24 @@
                 userAlerts.forEach((alert) => {
                     let hit = alert.type === 'up' ? item.price >= alert.price : item.price <= alert.price;
                     if (item.name.includes(alert.name) && hit) {
+                        isAlert = true; 
+                        
                         if (!triggeredAlerts.has(alert.id)) {
                             triggeredAlerts.add(alert.id);
-                            isAlert = true;
-                            playAlertSound();
-                            showToast(`🚨 预警触发：${item.name} 触线 ¥${alert.price}，微信通知发送中...`, true);
-                            
+                            fetch(`${apiBaseUrl}/assist_trigger`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' },
+                                body: JSON.stringify({ 
+                                    uid: document.getElementById('user-uid').value.trim(), 
+                                    alert_id: alert.id, 
+                                    name: item.name, 
+                                    price: item.price 
+                                })
+                            }).catch(e => {});
+
                             pendingKillList.add(alert.id);
                             renderAlertTags();
                             
-                            // 🚀 核心修复 2：将后台静默销毁时间从 5秒 延长至 20秒
-                            // 确保 Python 后端 (10秒一轮询) 绝对能抓住这个触线的预警并发出微信通知
                             setTimeout(async () => {
                                 userAlerts = userAlerts.filter(a => a.id !== alert.id);
                                 await syncAlerts(true); 
@@ -486,6 +511,7 @@
             let finalZoom = null;
             if (needResetZoom) { let end = xAxisLength; let start = Math.max(0, end - viewWindowSize); finalZoom = [{ startValue: start, endValue: end }]; needResetZoom = false; } 
             else if (isAtRight) { let viewSpan = currentEndIdx - currentStartIdx; let end = xAxisLength; let start = Math.max(0, end - viewSpan); finalZoom = [{ startValue: start, endValue: end }]; } 
+            else { finalZoom = [{ startValue: currentStartIdx, endValue: currentEndIdx }]; }
             
             let chartOpt = { animation: false, xAxis: { data: xAxisData, boundaryGap: true }, yAxis: { min: (minP - pad).toFixed(2), max: (maxP + pad).toFixed(2) }, series: [{ type: 'candlestick', data: seriesData, barCategoryGap: '28%', itemStyle: { color: '#ef4444', color0: '#00d8a6', borderColor: '#ef4444', borderColor0: '#00d8a6', borderWidth: 1.5 }, markLine: { symbol: ['none', 'none'], data: [{ yAxis: currentClose }], animation: false, lineStyle: { color: '#ef4444', type: 'dashed', width: 1.5, shadowBlur: 5, shadowColor: 'rgba(239,68,68,0.5)' }, label: { show: true, position: 'end', formatter: '¥{c}', backgroundColor: '#ef4444', color: '#fff', padding: [4, 6], borderRadius: 4, fontWeight: 'bold', fontFamily: 'monospace' } } }] };
             if (finalZoom) chartOpt.dataZoom = finalZoom;
