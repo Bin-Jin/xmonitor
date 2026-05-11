@@ -356,7 +356,6 @@
             if (!displayData.length || !chartInstance) return;
 
             const isMobile = window.innerWidth < 640;
-            // 🚀 核心优化1：逻辑占位视口长度 (确保数据少时靠左且不拉伸)
             const viewWindowSize = isMobile ? 35 : 60; 
             const total = displayData.length;
             const xAxisLength = Math.max(total, viewWindowSize);
@@ -369,7 +368,6 @@
             let pad = (maxP - minP) * 0.1 || 0.2;
             let currentClose = displayData[displayData.length - 1][1];
 
-            // 🚀 核心优化2：动态视角锁定算法 (针对滚轮缩放优化)
             let currentOption = chartInstance.getOption();
             let isAtRight = true;
             let currentStartIdx = 0;
@@ -385,8 +383,10 @@
 
             let finalZoom = [];
             if (needResetZoom) {
-                // 切换周期时：重置到最左侧并展示默认窗口长度
-                finalZoom = [{ startValue: 0, endValue: viewWindowSize }, { startValue: 0, endValue: viewWindowSize }];
+                // 🚀 核心修复：初始显示位置或切换周期时，强行定位到最右侧最新生成的烛图
+                let end = xAxisLength;
+                let start = Math.max(0, end - viewWindowSize);
+                finalZoom = [{ startValue: start, endValue: end }, { startValue: start, endValue: end }];
                 needResetZoom = false;
             } 
             else if (isAtRight) {
@@ -409,7 +409,6 @@
                 series: [{ 
                     type: 'candlestick', 
                     data: seriesData,
-                    // 🚀 核心优化3：设置固定比例间隙
                     barCategoryGap: '28%', // 柱子占72%，间隙占28%，永远成比例缩放
                     itemStyle: { 
                         color: '#ff4d4f', color0: '#00d8a6', 
@@ -462,7 +461,7 @@
         }
         function removeAlert(i) { userAlerts.splice(i, 1); renderAlertTags(); syncAlerts(); }
         function renderAlertTags() {
-            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `<div class="bg-[#3b82f6]/10 border border-[#3b82f6]/20 px-4 py-2 rounded-xl flex items-center gap-3 text-[10px] sm:text-xs font-bold text-gray-300 shadow-sm">${a.name} < ¥${a.price} <i class="ph ph-x-circle cursor-pointer hover:text-[#ff4d4f] transition-colors" onclick="removeAlert(${i})"></i></div>`).join('');
+            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `<div class="bg-brand/10 border border-brand/20 px-4 py-2 rounded-xl flex items-center gap-3 text-[10px] sm:text-xs font-bold text-gray-300 shadow-sm">${a.name} < ¥${a.price} <i class="ph ph-x-circle cursor-pointer hover:text-[#ff4d4f] transition-colors" onclick="removeAlert(${i})"></i></div>`).join('');
         }
         function syncAlerts() {
             if(!apiBaseUrl || !isRunning) return;
