@@ -143,7 +143,11 @@
                     <div class="flex flex-col sm:flex-row gap-3">
                         <input id="alert-name" type="text" placeholder="关键字..." class="w-full sm:flex-1 bg-[#12161b] border border-white/5 rounded-xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white focus:border-brand">
                         <div class="flex gap-2 sm:gap-4 w-full sm:w-auto">
-                            <input id="alert-price" type="number" placeholder="触发价" class="flex-1 sm:flex-none sm:w-32 bg-[#12161b] border border-white/5 rounded-xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white font-mono">
+                            <select id="alert-type" class="bg-[#12161b] border border-white/5 rounded-xl px-2 py-2.5 sm:py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-brand cursor-pointer">
+                                <option value="down">跌破 ≤</option>
+                                <option value="up">突破 ≥</option>
+                            </select>
+                            <input id="alert-price" type="number" placeholder="触发价" class="flex-1 sm:w-28 bg-[#12161b] border border-white/5 rounded-xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white font-mono focus:outline-none focus:border-brand">
                             <button onclick="addAlert()" class="bg-brand hover:bg-blue-600 text-white font-black rounded-xl px-4 sm:px-8 py-2.5 sm:py-3 text-[10px] sm:text-xs transition-all shadow-lg active:scale-95 shrink-0 whitespace-nowrap">部署任务</button>
                         </div>
                     </div>
@@ -284,14 +288,22 @@
                 totalDealAmt += item.dealAmount;
                 totalMarketYtd += item.marketRate > -99.9 ? (item.marketAmount / (1 + item.marketRate / 100)) : item.marketAmount;
                 totalDealAmtYtd += item.dealRate > -99.9 ? (item.dealAmount / (1 + item.dealRate / 100)) : item.dealAmount;
+                
                 let safeId = item.id || encodeURIComponent(item.name).replace(/%/g, '_');
-                let isAlert = userAlerts.some(a => item.name.includes(a.name) && item.price <= a.price);
+                let triggeredAlert = userAlerts.find(a => item.name.includes(a.name) && (a.type === 'up' ? item.price >= a.price : item.price <= a.price));
+                let isAlert = !!triggeredAlert;
+                
                 if (isAlert) {
-                    let alertKey = item.name + '_' + item.price + '_' + safeId;
+                    let alertKey = item.name + '_' + item.price + '_' + safeId + '_' + triggeredAlert.type;
                     if (!triggeredAlerts.has(alertKey)) {
-                        triggeredAlerts.add(alertKey); playAlertSound(); showToast(`🚨 预警：${item.name} 跌至 ¥${item.price}`, true);
+                        triggeredAlerts.add(alertKey); 
+                        playAlertSound(); 
+                        let actionText = triggeredAlert.type === 'up' ? '涨至' : '跌至';
+                        showToast(`🚨 预警：${item.name} ${actionText} ¥${item.price}`, true);
                     }
                 }
+                
+                // 🚀 完整还原附带图像和双边排版的列表卡片结构
                 htmlBuffer.push(`
                     <div id="row-${safeId}" class="item-row flex items-center justify-between p-2.5 sm:p-3 rounded-xl border ${isAlert ? 'bg-[#ff4d4f]/10 border-[#ff4d4f]/30' : 'bg-[#12161b] border-white/5'} transition-all duration-300 gap-1 sm:gap-2">
                         <div class="flex items-center gap-2 sm:gap-3 w-[45%] sm:w-1/3 min-w-0">
@@ -452,22 +464,29 @@
         }
 
         function addAlert() {
-            const n = document.getElementById('alert-name').value.trim(), p = parseFloat(document.getElementById('alert-price').value);
+            const n = document.getElementById('alert-name').value.trim();
+            const p = parseFloat(document.getElementById('alert-price').value);
+            const t = document.getElementById('alert-type').value;
             if(n && !isNaN(p)) { 
-                userAlerts.push({name: n, price: p}); 
+                userAlerts.push({name: n, price: p, type: t}); 
                 document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = ""; 
                 renderAlertTags(); syncAlerts(); if (lastResultData) updateUI(lastResultData);
             }
         }
         function removeAlert(i) { userAlerts.splice(i, 1); renderAlertTags(); syncAlerts(); }
         function renderAlertTags() {
-            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => `<div class="bg-brand/10 border border-brand/20 px-4 py-2 rounded-xl flex items-center gap-3 text-[10px] sm:text-xs font-bold text-gray-300 shadow-sm">${a.name} < ¥${a.price} <i class="ph ph-x-circle cursor-pointer hover:text-[#ff4d4f] transition-colors" onclick="removeAlert(${i})"></i></div>`).join('');
+            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => {
+                const isUp = a.type === 'up';
+                const icon = isUp ? '<i class="ph-bold ph-trend-up text-[#ff4d4f]"></i>' : '<i class="ph-bold ph-trend-down text-[#00d8a6]"></i>';
+                const symbol = isUp ? '≥' : '≤';
+                return `<div class="bg-brand/10 border border-brand/20 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 text-[10px] sm:text-xs font-bold text-gray-300 shadow-sm">${icon} ${a.name} ${symbol} ¥${a.price} <i class="ph ph-x-circle cursor-pointer hover:text-[#ff4d4f] transition-colors ml-1" onclick="removeAlert(${i})"></i></div>`;
+            }).join('');
         }
         function syncAlerts() {
             if(!apiBaseUrl || !isRunning) return;
             const uid = document.getElementById('user-uid').value;
-            showToast("配置已同步");
-            fetch(`${apiBaseUrl}/update_alerts`, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price })) }) }).catch(e => console.log("同步延迟"));
+            showToast("预警配置已部署");
+            fetch(`${apiBaseUrl}/update_alerts`, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price, type: a.type || 'down' })) }) }).catch(e => console.log("同步延迟"));
         }
     </script>
 </body>
