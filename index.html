@@ -581,6 +581,7 @@
                 finalZoom = [{ startValue: start, endValue: end }, { startValue: start, endValue: end }];
             } 
             else {
+                // 历史模式：保持用户当前查看的窗口范围，而不是重置
                 finalZoom = [{ startValue: currentStartIdx, endValue: currentEndIdx }, { startValue: currentStartIdx, endValue: currentEndIdx }];
             }
 
@@ -637,10 +638,21 @@
                 grid: { left: isMobile ? '2%' : '3%', right: isMobile ? 65 : '8%', bottom: '8%', top: '5%', containLabel: true },
                 xAxis: { type: 'category', data: [], axisLine: { show: false }, splitLine: { show: false } },
                 yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, axisLabel: { color: '#4a5568', fontSize: isMobile ? 8 : 10 } },
-                dataZoom: [ { type: 'inside', xAxisIndex: 0 }, { type: 'slider', xAxisIndex: 0, height: 6, bottom: 0, borderColor: 'transparent', backgroundColor: 'rgba(255,255,255,0.05)', fillerColor: 'rgba(59, 130, 246, 0.4)', handleStyle: { opacity: 0 }, textStyle: { color: 'transparent' } } ],
+                dataZoom: [ 
+                    { type: 'inside', xAxisIndex: 0, filterMode: 'empty' }, 
+                    { type: 'slider', xAxisIndex: 0, height: 6, bottom: 0, borderColor: 'transparent', backgroundColor: 'rgba(255,255,255,0.05)', fillerColor: 'rgba(59, 130, 246, 0.4)', handleStyle: { opacity: 0 }, textStyle: { color: 'transparent' } } 
+                ],
                 series: [{ type: 'candlestick', data: [] }]
             });
             
+            // 🚀 核心优化：接管 dataZoom 事件，防止手机端双指放大时目标区域丢失
+            chartInstance.on('dataZoom', function (params) {
+                // 如果是用户手动触发的缩放，标记为非重置状态，防止下一次 renderKLine 覆盖用户的视角
+                if (params.batch || params.start != null) {
+                    needResetZoom = false; 
+                }
+            });
+
             window.addEventListener('resize', () => { 
                 if (chartInstance) { chartInstance.resize(); renderKLine(); } 
                 if (scatterInstance) { scatterInstance.resize(); }
