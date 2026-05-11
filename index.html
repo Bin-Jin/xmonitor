@@ -6,7 +6,7 @@
     <meta name="referrer" content="no-referrer">
     <meta name="color-scheme" content="dark">
     
-    <title>XMeta 典藏行情终端 Pro Max</title>
+    <title>XMeta 典藏藏品行情终端</title>
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' fill='none'%3E%3Cpath d='M30 4L54 16V44L30 56L6 44V16L30 4Z' fill='%233b82f6'/%3E%3Cpath d='M22 30L28 42L42 18' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 
@@ -205,7 +205,7 @@
             <div class="lg:col-span-12 glass-panel p-5 sm:p-8 rounded-3xl shadow-xl h-[600px] sm:h-[800px] flex flex-col relative overflow-hidden">
                 <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-brand/10 rounded-[100%] blur-3xl pointer-events-none"></div>
                 <div class="flex justify-between items-center mb-4 sm:mb-6 relative z-10">
-                    <h3 class="text-[11px] sm:text-sm font-black text-white flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-bar text-brand"></i> 典藏市场活跃藏品排行 <span class="text-[9px] sm:text-[10px] font-normal lowercase hidden sm:inline text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50 ml-2">滚动查看更多</span></h3>
+                    <h3 class="text-[11px] sm:text-sm font-black text-white flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-bar text-brand"></i> 典藏市场活跃藏品排行 <span class="text-[9px] sm:text-[10px] font-normal lowercase hidden sm:inline text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50 ml-2">滑动查看全部</span></h3>
                 </div>
                 <div id="leaderboardChart" class="flex-1 w-full relative z-10"></div>
             </div>
@@ -322,6 +322,10 @@
             document.getElementById('user-uid').disabled = true; document.getElementById('auth-code').disabled = true;
             startBtn.className = "bg-slate-800 text-slate-500 w-full sm:w-auto px-6 py-2.5 sm:py-3 rounded-xl text-xs font-bold shrink-0 shadow-inner cursor-not-allowed border border-slate-700";
             if (monitorInterval) clearInterval(monitorInterval);
+            
+            // 🚀 核心修复 1：连接时强制将本地保存的指令立刻推送给后端，防止重启后丢失
+            syncAlerts();
+            
             fetchPricesData(); monitorInterval = setInterval(fetchPricesData, 2000);
         }
 
@@ -365,12 +369,14 @@
                             pendingKillList.add(alert.id);
                             renderAlertTags();
                             
+                            // 🚀 核心修复 2：将后台静默销毁时间从 5秒 延长至 20秒
+                            // 确保 Python 后端 (10秒一轮询) 绝对能抓住这个触线的预警并发出微信通知
                             setTimeout(async () => {
                                 userAlerts = userAlerts.filter(a => a.id !== alert.id);
                                 await syncAlerts(true); 
                                 pendingKillList.delete(alert.id);
                                 renderAlertTags(); 
-                            }, 5000);
+                            }, 20000);
                         }
                     }
                 });
@@ -453,7 +459,6 @@
                         moveOnMouseWheel: true   
                     } 
                 ],
-                // 🚀 X 轴优化：减少手机端的刻度数量并开启智能防重叠
                 grid: { left: isMobile ? '2%' : '5%', right: isMobile ? '12%' : '12%', bottom: '5%', top: '2%', containLabel: true }, 
                 xAxis: { 
                     type: 'value', 
@@ -478,7 +483,6 @@
             let currentOption = chartInstance.getOption(); let isAtRight = true; let currentStartIdx = 0; let currentEndIdx = xAxisLength;
             if (currentOption && currentOption.dataZoom && currentOption.dataZoom[0]) { let dz = currentOption.dataZoom[0]; currentStartIdx = Math.round(dz.startValue); currentEndIdx = Math.round(dz.endValue); isAtRight = dz.endValue >= (xAxisLength - 1.5); }
             
-            // 🚀 核心修复：仅在需要重置视口或保持右侧跟随才显式覆盖 dataZoom，不再强制锁定用户的缩放动作
             let finalZoom = null;
             if (needResetZoom) { let end = xAxisLength; let start = Math.max(0, end - viewWindowSize); finalZoom = [{ startValue: start, endValue: end }]; needResetZoom = false; } 
             else if (isAtRight) { let viewSpan = currentEndIdx - currentStartIdx; let end = xAxisLength; let start = Math.max(0, end - viewSpan); finalZoom = [{ startValue: start, endValue: end }]; } 
