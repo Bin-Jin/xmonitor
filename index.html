@@ -37,13 +37,10 @@
     </script>
     <style>
         :root { --brand: #3b82f6; --up: #ef4444; --price: #00d8a6; --down: #22c55e; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar { width: 0px; height: 0px; display: none; }
+        * { scrollbar-width: none; -ms-overflow-style: none; }
 
         body { 
-            /* 🌌 高级暗黑背景，带径向渐变光晕 */
             background-color: #020617; 
             background-image: radial-gradient(ellipse 80% 80% at 50% -20%, rgba(59, 130, 246, 0.15), rgba(255, 255, 255, 0));
             color: #f8fafc; 
@@ -55,22 +52,19 @@
         
         input::-ms-clear, input::-ms-reveal { display: none; }
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
-        input:focus { outline: none !important; border-color: var(--brand) !important; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        input:focus, select:focus { outline: none !important; border-color: var(--brand) !important; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
 
-        /* 💎 琉璃毛玻璃质感增强版 */
         .glass-panel { 
             background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-top: 1px solid rgba(255, 255, 255, 0.15); /* 顶部高光边框 */
+            border-top: 1px solid rgba(255, 255, 255, 0.15); 
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
         
-        .log-container::-webkit-scrollbar { width: 4px; }
         .tab-btn-active { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         
-        /* ✨ 列表微交互动画 */
         .item-row { backface-visibility: hidden; will-change: transform, opacity; }
         .item-row:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); border-color: rgba(255, 255, 255, 0.15); z-index: 10; }
         
@@ -81,7 +75,6 @@
         @keyframes pulse-ring { 0% { transform: scale(0.95); opacity: 0.8; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4)); } 50% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.8)); } 100% { transform: scale(0.95); opacity: 0.8; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4)); } }
         .animate-logo-ring { animation: pulse-ring 3s infinite ease-in-out; }
 
-        /* 渐变按钮 */
         .btn-gradient {
             background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             transition: all 0.3s ease;
@@ -103,7 +96,6 @@
     <div class="max-w-[1600px] mx-auto space-y-4 sm:space-y-6">
         <header class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch">
             <div class="lg:col-span-1 glass-panel p-6 sm:p-8 rounded-3xl flex flex-col justify-between relative overflow-hidden">
-                <!-- 装饰性光晕 -->
                 <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
                 
                 <div class="flex items-center gap-5 relative z-10">
@@ -125,24 +117,26 @@
                             <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400">XMeta</span>
                             <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 font-black ml-1">典藏终端</span>
                         </h1>
-                        <div class="flex items-center gap-2 mt-1"><div id="status-dot" class="w-2 h-2 rounded-full bg-slate-600 shrink-0 shadow-[0_0_8px_rgba(0,0,0,0)]"></div><span id="status-text" class="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-widest truncate">系统就绪 / 链路监听中</span></div>
+                        <div class="flex items-center gap-2 mt-1"><div id="status-dot" class="w-2 h-2 rounded-full bg-slate-600 shrink-0 shadow-[0_0_8px_rgba(0,0,0,0)]"></div><span id="status-text" class="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-widest truncate">系统就绪 / 等待授权接入</span></div>
                     </div>
                 </div>
                 <div class="mt-6 sm:mt-8 space-y-3 relative z-10">
-                    <input id="user-uid" type="text" placeholder="WxPusher UID" class="w-full bg-[#020617]/50 border border-slate-700/50 rounded-xl px-4 py-2.5 sm:py-3 text-xs text-white font-mono transition-colors">
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                        <input id="api-url" type="text" placeholder="https://xxxx.cpolar.cn" class="w-full bg-[#020617]/50 border border-slate-700/50 rounded-xl px-4 py-2.5 sm:py-3 text-xs text-white transition-colors">
+                        <input id="user-uid" type="text" placeholder="WxPusher UID" class="w-full sm:w-1/2 bg-[#020617]/50 border border-slate-700/50 rounded-xl px-4 py-2.5 sm:py-3 text-xs text-white font-mono transition-colors focus:outline-none focus:border-brand">
+                        <input id="auth-code" type="password" placeholder="专属授权码 (必填)" class="w-full sm:w-1/2 bg-[#020617]/50 border border-slate-700/50 rounded-xl px-4 py-2.5 sm:py-3 text-xs text-white font-mono transition-colors focus:outline-none focus:border-brand">
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <input id="api-url" type="text" placeholder="https://xxxx.cpolar.cn" class="w-full bg-[#020617]/50 border border-slate-700/50 rounded-xl px-4 py-2.5 sm:py-3 text-xs text-white transition-colors focus:outline-none focus:border-brand">
                         <button onclick="toggleMonitor()" id="start-btn" class="btn-gradient w-full sm:w-auto text-white px-6 py-2.5 sm:py-3 rounded-xl text-xs font-bold shrink-0 shadow-lg">启动链路</button>
                     </div>
                 </div>
             </div>
 
             <div class="lg:col-span-2 glass-panel p-6 sm:p-10 rounded-3xl border-t-[3px] border-brand flex flex-col md:flex-row items-center gap-6 sm:gap-10 shadow-xl relative overflow-hidden">
-                <!-- 装饰性网格背景 -->
                 <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 20px 20px;"></div>
                 
                 <div class="w-full md:flex-1 text-center md:text-left relative z-10">
-                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 sm:mb-3 flex items-center justify-center md:justify-start gap-2"><i class="ph-fill ph-trend-up text-brand"></i> 典藏大盘均价指数</p>
+                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 sm:mb-3 flex items-center justify-center md:justify-start gap-2"><i class="ph-bold ph-globe"></i> 典藏大盘均价指数</p>
                     <div class="flex items-baseline justify-center md:justify-start gap-4">
                         <span id="avg-price" class="text-5xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-400 font-mono tracking-tighter drop-shadow-sm">0.00</span>
                     </div>
@@ -179,7 +173,7 @@
 
             <div class="lg:col-span-7 space-y-4 sm:space-y-6">
                 <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl">
-                    <h2 class="text-xs sm:text-sm font-black text-slate-300 flex items-center gap-2.5 mb-5 sm:mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand"></i> 藏品预警阵列</h2>
+                    <h2 class="text-xs sm:text-sm font-black text-slate-300 flex items-center gap-2.5 mb-5 sm:mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand"></i> 藏品价格预警</h2>
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <input id="alert-name" type="text" placeholder="输入藏品关键字..." class="w-full sm:flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-brand transition-colors min-w-0 shadow-inner">
                         <div class="flex gap-2 sm:gap-3 w-full sm:w-auto">
@@ -196,7 +190,7 @@
 
                 <div class="glass-panel p-5 sm:p-6 rounded-3xl h-[320px] md:h-[450px] flex flex-col shadow-xl">
                     <div class="flex justify-between items-center mb-3 sm:mb-4">
-                        <h3 class="text-[10px] sm:text-sm font-black text-slate-300 flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-line-up text-brand"></i> 实时走势推演 <span class="text-[9px] font-normal lowercase hidden sm:inline text-slate-500">(可滑动/缩放历史)</span></h3>
+                        <h3 class="text-[10px] sm:text-sm font-black text-slate-300 flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-line-up text-brand"></i> 典藏指数实时走势 <span class="text-[9px] font-normal lowercase hidden sm:inline text-slate-500">(可滑动/缩放历史)</span></h3>
                         <div class="flex gap-1 bg-slate-900/60 p-1 rounded-lg border border-slate-700/50 overflow-x-auto shadow-inner">
                             <button onclick="switchFrame('1m')" id="btn-1m" class="px-2.5 sm:px-3.5 py-1.5 rounded-md text-[9px] sm:text-xs font-bold tab-btn-active shrink-0 transition-colors">1分</button>
                             <button onclick="switchFrame('5m')" id="btn-5m" class="px-2.5 sm:px-3.5 py-1.5 rounded-md text-[9px] sm:text-xs font-bold text-slate-400 hover:text-slate-200 shrink-0 transition-colors">5分</button>
@@ -208,13 +202,10 @@
                 </div>
             </div>
             
-            <!-- 龙虎榜 -->
-            <div class="lg:col-span-12 glass-panel p-5 sm:p-8 rounded-3xl shadow-xl h-[500px] sm:h-[650px] flex flex-col relative overflow-hidden">
-                <!-- 底部装饰光晕 -->
+            <div class="lg:col-span-12 glass-panel p-5 sm:p-8 rounded-3xl shadow-xl h-[600px] sm:h-[800px] flex flex-col relative overflow-hidden">
                 <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-brand/10 rounded-[100%] blur-3xl pointer-events-none"></div>
-                
                 <div class="flex justify-between items-center mb-4 sm:mb-6 relative z-10">
-                    <h3 class="text-[11px] sm:text-sm font-black text-white flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-bar text-brand"></i> 市场核心阵地龙虎榜 <span class="text-[9px] sm:text-[10px] font-normal lowercase hidden sm:inline text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50 ml-2">Top 15 活跃吸金阵地</span></h3>
+                    <h3 class="text-[11px] sm:text-sm font-black text-white flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-bar text-brand"></i> 全市场活跃阵地排行 <span class="text-[9px] sm:text-[10px] font-normal lowercase hidden sm:inline text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50 ml-2">已加载全部数据 - 支持鼠标滚轮滚动查看</span></h3>
                 </div>
                 <div id="leaderboardChart" class="flex-1 w-full relative z-10"></div>
             </div>
@@ -226,9 +217,11 @@
         let klineData = [], liveCandle = null, lastPointCount = 0;
         let lastPrices = {}, toastTimeout, apiBaseUrl = "", fetchLock = false; 
         let lastHistory = null, lastResultData = null; 
-        
         let needResetZoom = true; 
         let triggeredAlerts = new Set(); 
+        let monitorInterval = null;
+        let leaderboardFirstRender = true;
+        let pendingKillList = new Set();
 
         function startApp() {
             if (typeof echarts === 'undefined') {
@@ -237,15 +230,10 @@
             }
             initChart();
             initLeaderboard();
-            
-            const savedUrl = localStorage.getItem('xmeta_url');
-            const savedUid = localStorage.getItem('xmeta_uid');
-            
+            const savedUrl = localStorage.getItem('xmeta_url'), savedUid = localStorage.getItem('xmeta_uid'), savedAuth = localStorage.getItem('xmeta_auth'); 
             if(savedUrl) document.getElementById('api-url').value = savedUrl;
-            if(savedUid) {
-                document.getElementById('user-uid').value = savedUid;
-                loadAlertsForUid(savedUid);
-            }
+            if(savedAuth) document.getElementById('auth-code').value = savedAuth;
+            if(savedUid) { document.getElementById('user-uid').value = savedUid; loadAlertsForUid(savedUid); }
         }
 
         window.onload = startApp;
@@ -253,13 +241,7 @@
         function loadAlertsForUid(uid) {
             if(!uid) return;
             const savedAlerts = localStorage.getItem(`xmeta_alerts_${uid}`);
-            if(savedAlerts) {
-                try {
-                    userAlerts = JSON.parse(savedAlerts);
-                } catch(e) { userAlerts = []; }
-            } else {
-                userAlerts = [];
-            }
+            if(savedAlerts) { try { userAlerts = JSON.parse(savedAlerts); } catch(e) { userAlerts = []; } } else { userAlerts = []; }
             renderAlertTags();
         }
 
@@ -279,83 +261,68 @@
             const toast = document.getElementById('toast-msg');
             if (!toast) return;
             document.getElementById('toast-text').innerText = msg;
-            
-            // 强化交互反馈的阴影和颜色
-            if (isWarning) {
-                toast.className = `fixed bottom-4 sm:bottom-10 right-4 sm:right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 bg-[#ef4444] text-white px-5 sm:px-6 py-3 sm:py-4 rounded-xl shadow-[0_10px_40px_rgba(239,68,68,0.5)] font-bold flex items-center gap-3 pointer-events-none text-xs sm:text-sm border border-red-300/30`;
-            } else {
-                toast.className = `fixed bottom-4 sm:bottom-10 right-4 sm:right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 bg-[#3b82f6] text-white px-5 sm:px-6 py-3 sm:py-4 rounded-xl shadow-[0_10px_40px_rgba(59,130,246,0.5)] font-bold flex items-center gap-3 pointer-events-none text-xs sm:text-sm border border-blue-300/30`;
-            }
-
+            toast.className = `fixed bottom-4 sm:bottom-10 right-4 sm:right-10 z-[200] transform transition-all duration-300 translate-y-0 opacity-100 ${isWarning?'bg-[#ef4444] shadow-[0_10px_40px_rgba(239,68,68,0.5)] border-red-300/30':'bg-[#3b82f6] shadow-[0_10px_40px_rgba(59,130,246,0.5)] border-blue-300/30'} text-white px-5 sm:px-6 py-3 sm:py-4 rounded-xl font-bold flex items-center gap-3 pointer-events-none text-xs sm:text-sm border`;
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => { toast.classList.replace('translate-y-0', 'translate-y-20'); toast.classList.replace('opacity-100', 'opacity-0'); }, 3000);
         }
 
+        function handleAuthFailed(msg) {
+            showToast(msg || "⛔ 授权已失效，您已被强制断开！", true);
+            isRunning = false; fetchLock = false;
+            if (monitorInterval) clearInterval(monitorInterval);
+            const startBtn = document.getElementById('start-btn');
+            startBtn.innerText = "启动链路"; startBtn.disabled = false;
+            document.getElementById('user-uid').disabled = false; document.getElementById('auth-code').disabled = false;
+            startBtn.className = "btn-gradient w-full sm:w-auto text-white px-6 py-2.5 sm:py-3 rounded-xl text-xs font-bold shrink-0 shadow-lg";
+            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-up shadow-[0_0_8px_rgba(239,68,68,0.8)] shrink-0";
+            document.getElementById('status-text').innerText = "链路断开";
+        }
+
         async function fetchPricesData() {
-            if (fetchLock) return;
+            if (!isRunning || fetchLock) return;
             fetchLock = true;
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const uid = document.getElementById('user-uid').value.trim(), authCode = document.getElementById('auth-code').value.trim();
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 5000);
             try {
-                const res = await fetch(`${apiBaseUrl}/prices`, { 
-                    method: 'GET',
-                    cache: 'no-cache',
-                    mode: 'cors',
-                    signal: controller.signal,
-                    headers: { 'Accept': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' }
-                });
+                const res = await fetch(`${apiBaseUrl}/prices?uid=${encodeURIComponent(uid)}&code=${encodeURIComponent(authCode)}`, { method: 'GET', cache: 'no-cache', mode: 'cors', signal: controller.signal, headers: { 'Accept': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' } });
                 clearTimeout(timeoutId);
+                if (res.status === 403) { const result = await res.json(); handleAuthFailed(result.msg); return; }
                 const result = await res.json();
+                if (result.status === 'auth_failed') { handleAuthFailed(result.msg); return; }
                 if (result.status === 'success') {
-                    // 心跳灯效果加强
                     document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-price shadow-[0_0_8px_rgba(0,216,166,0.8)] animate-pulse shrink-0";
-                    document.getElementById('status-text').innerText = "链路在线 / 同步中";
-                    document.getElementById('status-text').className = "text-[9px] sm:text-[10px] font-mono text-price uppercase tracking-widest truncate";
-                    
+                    document.getElementById('status-text').innerText = "同步中";
                     lastHistory = result.history; lastResultData = result; 
-                    if (result.history && result.history[currentFrame]) {
-                        klineData = result.history[currentFrame];
-                        lastPointCount = klineData.length;
-                    }
+                    if (result.history && result.history[currentFrame]) { klineData = result.history[currentFrame]; lastPointCount = klineData.length; }
                     updateUI(result);
                 }
             } catch (e) { 
                 clearTimeout(timeoutId);
-                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-up shadow-[0_0_8px_rgba(239,68,68,0.8)] shrink-0";
-                document.getElementById('status-text').innerText = "链路异常 (检测中)";
-                document.getElementById('status-text').className = "text-[9px] sm:text-[10px] font-mono text-up uppercase tracking-widest truncate";
+                if(isRunning) { document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-up shrink-0"; document.getElementById('status-text').innerText = "链路异常"; }
             } finally { fetchLock = false; }
         }
 
         async function toggleMonitor() {
             if (isRunning) return;
-            const uid = document.getElementById('user-uid').value.trim();
-            if(!uid) {
-                showToast("请先填写专属 UID", true);
-                return;
-            }
+            const uid = document.getElementById('user-uid').value.trim(), authCode = document.getElementById('auth-code').value.trim();
+            if(!uid || !authCode) { showToast("请完整填写 UID 和授权码！", true); return; }
             let rawUrl = document.getElementById('api-url').value.trim().replace(/\/$/, "");
-            if (location.protocol === 'https:' && rawUrl.startsWith('http://')) {
-                rawUrl = rawUrl.replace('http://', 'https://');
-                document.getElementById('api-url').value = rawUrl;
-            }
+            if (location.protocol === 'https:' && rawUrl.startsWith('http://')) rawUrl = rawUrl.replace('http://', 'https://');
             apiBaseUrl = rawUrl;
-            
-            if(uid !== localStorage.getItem('xmeta_uid')) {
-                 loadAlertsForUid(uid);
-            }
-            
-            localStorage.setItem('xmeta_url', apiBaseUrl);
-            localStorage.setItem('xmeta_uid', uid);
-            isRunning = true;
-            document.getElementById('start-btn').innerText = "监视运行中";
-            document.getElementById('start-btn').disabled = true;
-            // 按钮变暗态
-            document.getElementById('start-btn').className = "bg-slate-800 text-slate-500 w-full sm:w-auto px-6 py-2.5 sm:py-3 rounded-xl text-xs font-bold shrink-0 shadow-inner cursor-not-allowed border border-slate-700";
-            
-            syncAlerts();
-            fetchPricesData();
-            setInterval(fetchPricesData, 2000);
+            const startBtn = document.getElementById('start-btn'); const oldText = startBtn.innerText;
+            startBtn.innerText = "验证中...";
+            try {
+                const res = await fetch(`${apiBaseUrl}/verify_auth`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' }, body: JSON.stringify({ uid: uid, code: authCode }) });
+                const result = await res.json();
+                if (result.status !== 'success') { showToast(result.msg || "⛔ 授权无效", true); startBtn.innerText = oldText; return; }
+                showToast(result.msg || "✅ 授权通过！");
+            } catch (e) { showToast("连接服务器失败", true); startBtn.innerText = oldText; return; }
+            localStorage.setItem('xmeta_url', apiBaseUrl); localStorage.setItem('xmeta_uid', uid); localStorage.setItem('xmeta_auth', authCode); 
+            isRunning = true; startBtn.innerText = "监视中"; startBtn.disabled = true;
+            document.getElementById('user-uid').disabled = true; document.getElementById('auth-code').disabled = true;
+            startBtn.className = "bg-slate-800 text-slate-500 w-full sm:w-auto px-6 py-2.5 sm:py-3 rounded-xl text-xs font-bold shrink-0 shadow-inner cursor-not-allowed border border-slate-700";
+            if (monitorInterval) clearInterval(monitorInterval);
+            fetchPricesData(); monitorInterval = setInterval(fetchPricesData, 2000);
         }
 
         function formatMarketValue(num) {
@@ -375,99 +342,63 @@
         function updateUI(result) {
             const list = document.getElementById('price-list');
             let sumPrice = 0, totalMarket = 0, totalMarketYtd = 0, totalDeal = 0, totalDealAmt = 0, totalDealAmtYtd = 0;
-            let validPricesCount = 0;
-            let htmlBuffer = [];
-            
-            let leaderboardData = []; 
+            let validPricesCount = 0; let htmlBuffer = []; let leaderboardData = []; 
 
             result.data.forEach(item => {
                 if (item.price > 0) { sumPrice += item.price; validPricesCount++; }
-                totalMarket += item.marketAmount;
-                totalDeal += item.dealCount;
-                totalDealAmt += item.dealAmount;
+                totalMarket += item.marketAmount; totalDeal += item.dealCount; totalDealAmt += item.dealAmount;
                 totalMarketYtd += item.marketRate > -99.9 ? (item.marketAmount / (1 + item.marketRate / 100)) : item.marketAmount;
                 totalDealAmtYtd += item.dealRate > -99.9 ? (item.dealAmount / (1 + item.dealRate / 100)) : item.dealAmount;
-                
                 let safeId = item.id || encodeURIComponent(item.name).replace(/%/g, '_');
+                if (item.dealAmount > 0) { leaderboardData.push({ name: item.name, value: item.dealAmount, price: item.price, rate: item.minRate || 0, dealCount: item.dealCount || 1 }); }
                 
-                if (item.dealAmount > 0) {
-                    leaderboardData.push({
-                        name: item.name,
-                        value: item.dealAmount,
-                        price: item.price,
-                        rate: item.minRate || 0,
-                        dealCount: item.dealCount || 1
-                    });
-                }
-                
-                let triggeredAlert = userAlerts.find(a => item.name.includes(a.name) && (a.type === 'up' ? item.price >= a.price : item.price <= a.price));
-                let isAlert = !!triggeredAlert;
-
-                if (isAlert) {
-                    let alertKey = triggeredAlert.id; 
-                    if (!triggeredAlerts.has(alertKey)) {
-                        triggeredAlerts.add(alertKey); 
-                        playAlertSound(); 
-                        let actionText = triggeredAlert.type === 'up' ? '涨至' : '跌至';
-                        showToast(`🚨 预警：${item.name} ${actionText} ¥${item.price}`, true);
+                let isAlert = false;
+                userAlerts.forEach((alert) => {
+                    let hit = alert.type === 'up' ? item.price >= alert.price : item.price <= alert.price;
+                    if (item.name.includes(alert.name) && hit) {
+                        if (!triggeredAlerts.has(alert.id)) {
+                            triggeredAlerts.add(alert.id);
+                            isAlert = true;
+                            playAlertSound();
+                            showToast(`🚨 预警触发：${item.name} 触线 ¥${alert.price}，微信通知发送中...`, true);
+                            
+                            pendingKillList.add(alert.id);
+                            renderAlertTags();
+                            
+                            setTimeout(async () => {
+                                userAlerts = userAlerts.filter(a => a.id !== alert.id);
+                                await syncAlerts(true); 
+                                pendingKillList.delete(alert.id);
+                                renderAlertTags(); 
+                            }, 5000);
+                        }
                     }
-                }
-                
-                // 更精致的卡片样式
-                let bgStyle = 'bg-slate-800/40 border-slate-700/50 hover:border-slate-500/50';
-                let priceColor = 'text-price';
-                if (isAlert) {
-                    if (triggeredAlert.type === 'up') {
-                        bgStyle = 'bg-[#ef4444]/10 border-[#ef4444]/40 shadow-[0_0_15px_rgba(239,68,68,0.15)]';
-                        priceColor = 'text-[#ef4444] font-black drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]';
-                    } else {
-                        bgStyle = 'bg-[#22c55e]/10 border-[#22c55e]/40 shadow-[0_0_15px_rgba(34,197,94,0.15)]';
-                        priceColor = 'text-[#22c55e] font-black drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]';
-                    }
-                }
+                });
 
+                let bgStyle = isAlert ? 'bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'bg-slate-800/40 border-slate-700/50 hover:border-slate-500/50';
+                let priceColor = isAlert ? 'text-brand font-black' : 'text-price';
+                
                 htmlBuffer.push(`
-                    <div id="row-${safeId}" class="item-row flex items-center justify-between p-3 sm:p-3.5 rounded-2xl border ${bgStyle} transition-all duration-300 gap-2 sm:gap-3">
+                    <div id="row-${safeId}" class="item-row flex items-center justify-between p-3 rounded-2xl border ${bgStyle} transition-all duration-300 gap-2 sm:gap-3">
                         <div class="flex items-center gap-2.5 sm:gap-3.5 w-[45%] sm:w-1/3 min-w-0">
-                            <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl overflow-hidden bg-slate-800 flex-shrink-0 border border-slate-700 flex items-center justify-center relative shadow-inner">
-                                <span class="text-[8px] sm:text-[9px] text-slate-600 font-bold absolute">无图</span>
-                                <img src="${item.image || ''}" loading="lazy" decoding="async" class="w-full h-full object-cover relative z-10" onerror="this.style.opacity='0';">
-                            </div>
-                            <div class="flex flex-col min-w-0">
-                                <span class="text-xs sm:text-sm font-bold text-slate-200 truncate tracking-tight">${item.name}</span>
-                                <span class="text-[9px] sm:text-[10px] text-slate-500 uppercase mt-0.5 truncate font-mono">成交 ${item.dealCount}</span>
-                            </div>
+                            <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl overflow-hidden bg-slate-800 flex-shrink-0 border border-slate-700 flex items-center justify-center relative shadow-inner"><span class="text-[8px] sm:text-[9px] text-slate-600 font-bold absolute">无图</span><img src="${item.image || ''}" loading="lazy" decoding="async" class="w-full h-full object-cover relative z-10" onerror="this.style.opacity='0';"></div>
+                            <div class="flex flex-col min-w-0"><span class="text-xs sm:text-sm font-bold text-slate-200 truncate tracking-tight">${item.name}</span><span class="text-[9px] sm:text-[10px] text-slate-500 uppercase mt-0.5 truncate font-mono">成交 ${item.dealCount}</span></div>
                         </div>
-                        <div class="w-[25%] sm:w-1/3 text-right flex flex-col gap-0.5">
-                            <span class="font-mono text-xs sm:text-[15px] tracking-tight ${priceColor}">¥${item.price.toFixed(2)}</span>
-                            <div>${formatRate(item.minRate)}</div>
-                        </div>
-                        <div class="w-[30%] sm:w-1/3 text-right flex flex-col gap-0.5">
-                            <span class="font-mono text-[11px] sm:text-[13px] text-slate-300">¥${formatMarketValue(item.marketAmount)}</span>
-                            <div>${formatRate(item.marketRate)}</div>
-                        </div>
+                        <div class="w-[25%] sm:w-1/3 text-right flex flex-col gap-0.5"><span class="font-mono text-xs sm:text-[15px] tracking-tight ${priceColor}">¥${item.price.toFixed(2)}</span><div>${formatRate(item.minRate)}</div></div>
+                        <div class="w-[30%] sm:w-1/3 text-right flex flex-col gap-0.5"><span class="font-mono text-[11px] sm:text-[13px] text-slate-300">¥${formatMarketValue(item.marketAmount)}</span><div>${formatRate(item.marketRate)}</div></div>
                     </div>
                 `);
             });
+
             list.innerHTML = htmlBuffer.join('');
             document.getElementById('global-market-val').innerText = '¥' + formatMarketValue(totalMarket);
             document.getElementById('global-market-rate').innerHTML = formatRate(totalMarketYtd > 0 ? ((totalMarket - totalMarketYtd) / totalMarketYtd) * 100 : 0);
             document.getElementById('global-deal-val').innerText = totalDeal;
             document.getElementById('global-deal-rate').innerHTML = formatRate(totalDealAmtYtd > 0 ? ((totalDealAmt - totalDealAmtYtd) / totalDealAmtYtd) * 100 : 0);
             const currentAvg = validPricesCount > 0 ? Number((sumPrice / validPricesCount).toFixed(2)) : 0;
-            document.getElementById('avg-price').innerText = currentAvg.toFixed(2);
-            document.getElementById('item-count').innerText = result.data.length;
-            document.getElementById('sync-time').innerText = result.time;
-            if (result.temp && result.temp[currentFrame]) {
-                let tc = result.temp[currentFrame];
-                liveCandle = [tc.o, tc.c, tc.l, tc.h];
-            } else if (currentAvg > 0) {
-                if (!liveCandle || liveCandle[0] === 0) liveCandle = [currentAvg, currentAvg, currentAvg, currentAvg];
-                else { liveCandle[1] = currentAvg; liveCandle[3] = Math.max(liveCandle[3], currentAvg); liveCandle[2] = Math.min(liveCandle[2], currentAvg); }
-            }
-            
-            renderKLine();
-            renderLeaderboard(leaderboardData); 
+            document.getElementById('avg-price').innerText = currentAvg.toFixed(2); document.getElementById('item-count').innerText = result.data.length; document.getElementById('sync-time').innerText = result.time;
+            if (result.temp && result.temp[currentFrame]) { let tc = result.temp[currentFrame]; liveCandle = [tc.o, tc.c, tc.l, tc.h]; } else if (currentAvg > 0) { if (!liveCandle || liveCandle[0] === 0) liveCandle = [currentAvg, currentAvg, currentAvg, currentAvg]; else { liveCandle[1] = currentAvg; liveCandle[3] = Math.max(liveCandle[3], currentAvg); liveCandle[2] = Math.min(liveCandle[2], currentAvg); } }
+            renderKLine(); renderLeaderboard(leaderboardData); 
         }
 
         function switchFrame(frame) {
@@ -477,302 +408,126 @@
                 if (btn) btn.className = f === frame ? "px-2.5 sm:px-3.5 py-1.5 rounded-md text-[9px] sm:text-xs font-bold tab-btn-active shrink-0 transition-colors" : "px-2.5 sm:px-3.5 py-1.5 rounded-md text-[9px] sm:text-xs font-bold text-slate-400 hover:text-slate-200 shrink-0 transition-colors";
             });
             if (lastHistory && lastHistory[frame]) { klineData = lastHistory[frame]; lastPointCount = klineData.length; } else { klineData = []; lastPointCount = 0; }
-            if (lastResultData && lastResultData.temp && lastResultData.temp[frame]) {
-                let tc = lastResultData.temp[frame]; liveCandle = [tc.o, tc.c, tc.l, tc.h];
-            }
-            needResetZoom = true;
-            renderKLine();
+            if (lastResultData && lastResultData.temp && lastResultData.temp[frame]) { let tc = lastResultData.temp[frame]; liveCandle = [tc.o, tc.c, tc.l, tc.h]; }
+            needResetZoom = true; renderKLine();
         }
 
         function initLeaderboard() {
             const dom = document.getElementById('leaderboardChart');
-            if (!dom) return;
-            leaderboardInstance = echarts.init(dom);
+            if (!dom) return; leaderboardInstance = echarts.init(dom);
         }
 
-        // 🚀 高级渐变渲染：Top 15 横向柱状排行图
         function renderLeaderboard(data) {
             if (!leaderboardInstance || data.length === 0) return;
             const isMobile = window.innerWidth < 640;
             
+            // 🚀 核心修复：使用 startValue 和 endValue 固定显示条数，并应用到 inside 组件
+            let currentStartValue = Math.max(0, data.length - 20); // 默认显示最顶部的 20 条
+            let currentEndValue = data.length - 1;
+
+            const currentOption = leaderboardInstance.getOption();
+            if (currentOption && currentOption.dataZoom && !leaderboardFirstRender) {
+                currentStartValue = currentOption.dataZoom[0].startValue;
+                currentEndValue = currentOption.dataZoom[0].endValue;
+            }
+
             data.sort((a, b) => b.value - a.value);
-            let topData = data.slice(0, 15);
-            topData.reverse();
-
-            let yAxisData = topData.map(d => {
-                let name = d.name;
-                return name.length > 8 && isMobile ? name.substring(0,7) + '..' : name;
-            });
-
-            let seriesData = topData.map(d => {
-                // 🎨 核心优化：为柱子增加高级的线性渐变色 (LinearGradient)
+            let allData = [...data]; allData.reverse(); 
+            let yAxisData = allData.map(d => { let name = d.name; return name.length > 10 && isMobile ? name.substring(0,9) + '..' : name; });
+            let seriesData = allData.map(d => {
                 let colorObj;
-                if (d.rate > 0) {
-                    colorObj = new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-                        { offset: 0, color: 'rgba(239, 68, 68, 0.4)' }, // 暗红
-                        { offset: 1, color: 'rgba(239, 68, 68, 1)' }   // 亮红
-                    ]);
-                } else if (d.rate < 0) {
-                    colorObj = new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-                        { offset: 0, color: 'rgba(34, 197, 94, 0.4)' }, // 暗绿
-                        { offset: 1, color: 'rgba(34, 197, 94, 1)' }   // 亮绿
-                    ]);
-                } else {
-                    colorObj = new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-                        { offset: 0, color: 'rgba(100, 116, 139, 0.4)' }, 
-                        { offset: 1, color: 'rgba(100, 116, 139, 1)' }
-                    ]);
-                }
-
-                return {
-                    value: d.value,
-                    price: d.price,
-                    rate: d.rate,
-                    dealCount: d.dealCount,
-                    itemStyle: {
-                        color: colorObj,
-                        borderRadius: [0, 4, 4, 0],
-                        shadowBlur: 10,
-                        shadowColor: 'rgba(0, 0, 0, 0.5)' // 增加底层阴影立体感
-                    }
-                };
+                if (d.rate > 0) { colorObj = new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: 'rgba(239, 68, 68, 0.4)' }, { offset: 1, color: 'rgba(239, 68, 68, 1)' }]); } 
+                else if (d.rate < 0) { colorObj = new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: 'rgba(34, 197, 94, 0.4)' }, { offset: 1, color: 'rgba(34, 197, 94, 1)' }]); } 
+                else { colorObj = new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: 'rgba(100, 116, 139, 0.4)' }, { offset: 1, color: 'rgba(100, 116, 139, 1)' }]); }
+                return { value: d.value, price: d.price, rate: d.rate, dealCount: d.dealCount, itemStyle: { color: colorObj, borderRadius: [0, 4, 4, 0], shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' } };
             });
 
             leaderboardInstance.setOption({
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(255,255,255,0.05)' } },
-                    formatter: function (params) {
-                        let d = params[0].data;
-                        if (!d) return '';
-                        let sign = d.rate > 0 ? '+' : '';
-                        let color = d.rate > 0 ? '#ef4444' : (d.rate < 0 ? '#22c55e' : '#94a3b8');
-                        
-                        return `<div class='p-2'>
-                            <div class='font-bold text-white mb-2 border-b border-white/10 pb-2 text-sm'>${params[0].name || '未知'}</div>
-                            <div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>当前价<span class='text-white font-mono'>¥${d.price.toFixed(2)}</span></div>
-                            <div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>24H跌涨<span class='font-bold font-mono' style='color:${color}'>${sign}${d.rate.toFixed(2)}%</span></div>
-                            <div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>成交额<span class='text-white font-mono'>¥${formatMarketValue(d.value)}</span></div>
-                            <div class='flex justify-between gap-8 text-xs text-slate-300'>成交笔数<span class='text-white font-mono'>${d.dealCount}笔</span></div>
-                        </div>`;
-                    },
-                    backgroundColor: 'rgba(15,23,42,0.95)', 
-                    borderColor: 'rgba(59,130,246,0.5)',
-                    borderWidth: 1,
-                    textStyle: { color: '#f8fafc', fontSize: 12 },
-                    padding: [8, 12]
-                },
-                // 🚀 优化：略微增加 bottom 的值，给底部的 X 轴刻度字留出呼吸空间
-                grid: { left: isMobile ? '2%' : '5%', right: isMobile ? '18%' : '12%', bottom: '5%', top: '5%', containLabel: true },
-                xAxis: {
-                    type: 'value',
-                    splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.05)', type: 'dashed' } },
-                    // 🚀 优化：提亮了 X 轴刻度的颜色，并加粗
-                    axisLabel: { color: '#94a3b8', fontWeight: 'bold', formatter: (val) => formatMarketValue(val), fontSize: 10, fontFamily: 'monospace' }
-                },
-                yAxis: {
-                    type: 'category',
-                    data: yAxisData,
-                    axisLabel: { 
-                        // 🚀 优化：将藏品名字提亮为纯白色
-                        color: '#f8fafc', 
-                        fontSize: isMobile ? 10 : 12, 
-                        fontWeight: 'bold',
-                        margin: 12
-                    },
-                    axisLine: { show: false },
-                    axisTick: { show: false }
-                },
-                series: [{
-                    type: 'bar',
-                    data: seriesData,
-                    barWidth: isMobile ? 12 : 18,
-                    showBackground: true,
-                    backgroundStyle: { color: 'rgba(255,255,255,0.02)', borderRadius: [0, 4, 4, 0] },
-                    label: {
-                        show: true,
-                        position: 'right',
-                        formatter: function(params) {
-                            let rate = params.data.rate;
-                            let sign = rate > 0 ? '+' : '';
-                            // 🚀 优化：根据涨跌状态，动态分配不同的文本样式
-                            let style = rate > 0 ? 'upRate' : (rate < 0 ? 'downRate' : 'flatRate');
-                            return `{${style}|${sign}${rate.toFixed(2)}%}`;
-                        },
-                        rich: {
-                            // 🚀 优化：强制右侧文字使用高亮颜色，并附带文字发光阴影，彻底解决黑字看不清的问题
-                            upRate: { color: '#ef4444', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 10 : 12, padding: [0, 0, 0, 8], textShadowBlur: 4, textShadowColor: 'rgba(239,68,68,0.3)' },
-                            downRate: { color: '#22c55e', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 10 : 12, padding: [0, 0, 0, 8], textShadowBlur: 4, textShadowColor: 'rgba(34,197,94,0.3)' },
-                            flatRate: { color: '#94a3b8', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 10 : 12, padding: [0, 0, 0, 8] }
-                        }
-                    }
-                }]
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(255,255,255,0.05)' } }, formatter: function (params) { let d = params[0].data; if (!d) return ''; let sign = d.rate > 0 ? '+' : ''; let color = d.rate > 0 ? '#ef4444' : (d.rate < 0 ? '#22c55e' : '#94a3b8'); return `<div class='p-2'><div class='font-bold text-white mb-2 border-b border-white/10 pb-2 text-sm'>${params[0].name}</div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>当前价<span class='text-white font-mono'>¥${d.price.toFixed(2)}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>24H跌涨<span class='font-bold font-mono' style='color:${color}'>${sign}${d.rate.toFixed(2)}%</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>成交额<span class='text-white font-mono'>¥${formatMarketValue(d.value)}</span></div><div class='flex justify-between gap-8 text-xs text-slate-300'>成交笔数<span class='text-white font-mono'>${d.dealCount}笔</span></div></div>`; }, backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(59,130,246,0.5)', borderWidth: 1, textStyle: { color: '#f8fafc', fontSize: 12 }, padding: [8, 12] },
+                // 🚀 核心修改：只使用 inside，并且带上 startValue 和 endValue，避免挤成一堆
+                dataZoom: [ 
+                    { 
+                        type: 'inside', 
+                        yAxisIndex: 0,
+                        startValue: currentStartValue,
+                        endValue: currentEndValue,
+                        zoomOnMouseWheel: false, 
+                        moveOnMouseWheel: true   
+                    } 
+                ],
+                grid: { left: isMobile ? '2%' : '5%', right: isMobile ? '12%' : '12%', bottom: '5%', top: '2%', containLabel: true }, xAxis: { type: 'value', splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, axisLabel: { color: '#94a3b8', fontWeight: 'bold', formatter: (val) => formatMarketValue(val), fontSize: 10, fontFamily: 'monospace' } }, yAxis: { type: 'category', data: yAxisData, axisLabel: { color: '#f8fafc', fontSize: isMobile ? 10 : 12, fontWeight: 'bold', margin: 12 }, axisLine: { show: false }, axisTick: { show: false } },
+                series: [{ type: 'bar', data: seriesData, barWidth: isMobile ? 10 : 16, showBackground: true, backgroundStyle: { color: 'rgba(255,255,255,0.02)', borderRadius: [0, 4, 4, 0] }, label: { show: true, position: 'right', formatter: function(params) { let rate = params.data.rate; let sign = rate > 0 ? '+' : ''; let style = rate > 0 ? 'upRate' : (rate < 0 ? 'downRate' : 'flatRate'); return `{${style}|${sign}${rate.toFixed(2)}%}`; }, rich: { upRate: { color: '#ef4444', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 9 : 11, padding: [0, 0, 0, 8], textShadowBlur: 4, textShadowColor: 'rgba(239,68,68,0.3)' }, downRate: { color: '#22c55e', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 9 : 11, padding: [0, 0, 0, 8], textShadowBlur: 4, textShadowColor: 'rgba(34,197,94,0.3)' }, flatRate: { color: '#94a3b8', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 9 : 11, padding: [0, 0, 0, 8] } } } }]
             });
+            leaderboardFirstRender = false; 
         }
 
         function renderKLine() {
-            let displayData = [...klineData];
-            if (liveCandle && liveCandle[0] > 0) {
-                displayData.push([liveCandle[0], liveCandle[1], liveCandle[2], liveCandle[3]]);
-            }
+            let displayData = [...klineData]; if (liveCandle && liveCandle[0] > 0) displayData.push([liveCandle[0], liveCandle[1], liveCandle[2], liveCandle[3]]);
             if (!displayData.length || !chartInstance) return;
-
-            const isMobile = window.innerWidth < 640;
-            const viewWindowSize = isMobile ? 35 : 60; 
-            const total = displayData.length;
-            const xAxisLength = Math.max(total, viewWindowSize);
-
-            let xAxisData = new Array(xAxisLength).fill('');
-            let seriesData = displayData.map(d => [d[0], d[1], d[2], d[3]]);
-            
-            const validData = displayData.filter(d => d && d[0] > 0);
-            let minP = Math.min(...validData.map(d => d[2])), maxP = Math.max(...validData.map(d => d[3]));
-            let pad = (maxP - minP) * 0.1 || 0.2;
-            let currentClose = displayData[displayData.length - 1][1];
-
-            let currentOption = chartInstance.getOption();
-            let isAtRight = true;
-            let currentStartIdx = 0;
-            let currentEndIdx = xAxisLength;
-
-            if (currentOption && currentOption.dataZoom && currentOption.dataZoom[0]) {
-                let dz = currentOption.dataZoom[0];
-                currentStartIdx = Math.round(dz.startValue);
-                currentEndIdx = Math.round(dz.endValue);
-                isAtRight = dz.endValue >= (xAxisLength - 1.5); 
-            }
-
+            const isMobile = window.innerWidth < 640; const viewWindowSize = isMobile ? 35 : 60; const total = displayData.length; const xAxisLength = Math.max(total, viewWindowSize);
+            let xAxisData = new Array(xAxisLength).fill(''); let seriesData = displayData.map(d => [d[0], d[1], d[2], d[3]]);
+            const validData = displayData.filter(d => d && d[0] > 0); let minP = Math.min(...validData.map(d => d[2])), maxP = Math.max(...validData.map(d => d[3]));
+            let pad = (maxP - minP) * 0.1 || 0.2; let currentClose = displayData[displayData.length - 1][1];
+            let currentOption = chartInstance.getOption(); let isAtRight = true; let currentStartIdx = 0; let currentEndIdx = xAxisLength;
+            if (currentOption && currentOption.dataZoom && currentOption.dataZoom[0]) { let dz = currentOption.dataZoom[0]; currentStartIdx = Math.round(dz.startValue); currentEndIdx = Math.round(dz.endValue); isAtRight = dz.endValue >= (xAxisLength - 1.5); }
             let finalZoom = [];
-            if (needResetZoom) {
-                let end = xAxisLength;
-                let start = Math.max(0, end - viewWindowSize);
-                finalZoom = [{ startValue: start, endValue: end }, { startValue: start, endValue: end }];
-                needResetZoom = false;
-            } 
-            else if (isAtRight) {
-                let viewSpan = currentEndIdx - currentStartIdx;
-                let end = xAxisLength;
-                let start = Math.max(0, end - viewSpan);
-                finalZoom = [{ startValue: start, endValue: end }, { startValue: start, endValue: end }];
-            } 
-            else {
-                finalZoom = [{ startValue: currentStartIdx, endValue: currentEndIdx }, { startValue: currentStartIdx, endValue: currentEndIdx }];
-            }
-
-            let option = {
-                animation: false,
-                xAxis: { data: xAxisData, boundaryGap: true },
-                yAxis: { min: (minP - pad).toFixed(2), max: (maxP + pad).toFixed(2) },
-                dataZoom: finalZoom,
-                series: [{ 
-                    type: 'candlestick', 
-                    data: seriesData,
-                    barCategoryGap: '28%',
-                    itemStyle: { 
-                        color: '#ef4444', color0: '#00d8a6', 
-                        borderColor: '#ef4444', borderColor0: '#00d8a6', 
-                        borderWidth: 1.5 
-                    },
-                    markLine: { 
-                        symbol: ['none', 'none'], data: [{ yAxis: currentClose }], animation: false,
-                        lineStyle: { color: '#ef4444', type: 'dashed', width: 1.5, shadowBlur: 5, shadowColor: 'rgba(239,68,68,0.5)' }, // 发光现价线
-                        label: { show: true, position: 'end', formatter: '¥{c}', backgroundColor: '#ef4444', color: '#fff', padding: [4, 6], borderRadius: 4, fontWeight: 'bold', fontFamily: 'monospace' }
-                    }
-                }]
-            };
-            chartInstance.setOption(option, { notMerge: false, lazyUpdate: true });
+            
+            // 🚀 核心修复 1：将每次更新时的 dataZoom 配置精简为仅 1 个数组元素（只保留 Inside 模式），彻底拔除底部的 Slider 组件
+            if (needResetZoom) { let end = xAxisLength; let start = Math.max(0, end - viewWindowSize); finalZoom = [{ startValue: start, endValue: end }]; needResetZoom = false; } 
+            else if (isAtRight) { let viewSpan = currentEndIdx - currentStartIdx; let end = xAxisLength; let start = Math.max(0, end - viewSpan); finalZoom = [{ startValue: start, endValue: end }]; } 
+            else { finalZoom = [{ startValue: currentStartIdx, endValue: currentEndIdx }]; }
+            
+            chartInstance.setOption({ animation: false, xAxis: { data: xAxisData, boundaryGap: true }, yAxis: { min: (minP - pad).toFixed(2), max: (maxP + pad).toFixed(2) }, dataZoom: finalZoom, series: [{ type: 'candlestick', data: seriesData, barCategoryGap: '28%', itemStyle: { color: '#ef4444', color0: '#00d8a6', borderColor: '#ef4444', borderColor0: '#00d8a6', borderWidth: 1.5 }, markLine: { symbol: ['none', 'none'], data: [{ yAxis: currentClose }], animation: false, lineStyle: { color: '#ef4444', type: 'dashed', width: 1.5, shadowBlur: 5, shadowColor: 'rgba(239,68,68,0.5)' }, label: { show: true, position: 'end', formatter: '¥{c}', backgroundColor: '#ef4444', color: '#fff', padding: [4, 6], borderRadius: 4, fontWeight: 'bold', fontFamily: 'monospace' } } }] }, { notMerge: false, lazyUpdate: true });
         }
 
         function initChart() {
-            const chartDom = document.getElementById('mainChart');
-            if (!chartDom) return;
-            chartInstance = echarts.init(chartDom);
-            const isMobile = window.innerWidth < 640;
-            chartInstance.setOption({
-                animation: false,
-                tooltip: { 
-                    trigger: 'axis', axisPointer: { type: 'cross', crossStyle: { color: 'rgba(255,255,255,0.2)', type: 'dashed' } }, 
-                    backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(59,130,246,0.5)', borderWidth: 1, padding: [8, 12], textStyle: { color: '#f8fafc', fontSize: 12 },
-                    formatter: p => {
-                        if (!p || !p[0] || !p[0].value || !Array.isArray(p[0].value) || p[0].value.length < 5) {
-                            if (p && p[0] && typeof p[0].value === 'number') return `现价: ¥${p[0].value.toFixed(2)}`;
-                            return '';
-                        }
-                        
-                        let d = p[0].value;
-                        let o = Number(d[1]) || 0;
-                        let c = Number(d[2]) || 0;
-                        let l = Number(d[3]) || 0;
-                        let h = Number(d[4]) || 0;
-                        let up = c >= o;
-                        
-                        return `<div class='p-1'><div class='font-bold text-white mb-2 border-b border-white/10 pb-2 text-sm'><span>走势详情</span><span class='float-right ${up?'text-[#ef4444]':'text-[#00d8a6]'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>开盘<span class='font-mono'>¥${o.toFixed(2)}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>收盘<span class='font-bold font-mono text-white'>¥${c.toFixed(2)}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>最低<span class='font-mono'>¥${l.toFixed(2)}</span></div><div class='flex justify-between gap-8 text-xs text-slate-300'>最高<span class='font-mono'>¥${h.toFixed(2)}</span></div></div>`;
-                    }
-                },
-                grid: { left: isMobile ? '2%' : '3%', right: isMobile ? 65 : '8%', bottom: '8%', top: '8%', containLabel: true },
-                xAxis: { type: 'category', data: [], axisLine: { show: false }, splitLine: { show: false } },
-                yAxis: { type: 'value', scale: true, splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'solid' } }, axisLabel: { color: '#64748b', fontSize: isMobile ? 9 : 11, fontFamily: 'monospace' } },
-                dataZoom: [ 
-                    { type: 'inside', xAxisIndex: 0, filterMode: 'empty' }, 
-                    { type: 'slider', xAxisIndex: 0, height: 6, bottom: 0, borderColor: 'transparent', backgroundColor: 'rgba(255,255,255,0.05)', fillerColor: 'rgba(59, 130, 246, 0.4)', handleStyle: { opacity: 0 }, textStyle: { color: 'transparent' } } 
-                ],
-                series: [{ type: 'candlestick', data: [] }]
+            const chartDom = document.getElementById('mainChart'); if (!chartDom) return;
+            chartInstance = echarts.init(chartDom); const isMobile = window.innerWidth < 640;
+            chartInstance.setOption({ 
+                animation: false, 
+                tooltip: { trigger: 'axis', axisPointer: { type: 'cross', crossStyle: { color: 'rgba(255,255,255,0.2)', type: 'dashed' } }, backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(59,130,246,0.5)', borderWidth: 1, padding: [8, 12], textStyle: { color: '#f8fafc', fontSize: 12 }, formatter: p => { if (!p || !p[0] || !p[0].value || !Array.isArray(p[0].value) || p[0].value.length < 5) { if (p && p[0] && typeof p[0].value === 'number') return `现价: ¥${p[0].value.toFixed(2)}`; return ''; } let d = p[0].value; let o = Number(d[1]) || 0; let c = Number(d[2]) || 0; let l = Number(d[3]) || 0; let h = Number(d[4]) || 0; let up = c >= o; return `<div class='p-1'><div class='font-bold text-white mb-2 border-b border-white/10 pb-2 text-sm'><span>详情</span><span class='float-right ${up?'text-[#ef4444]':'text-[#00d8a6]'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>开盘<span class='font-mono'>¥${o.toFixed(2)}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>收盘<span class='font-bold font-mono text-white'>¥${c.toFixed(2)}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>最低<span class='font-mono'>¥${l.toFixed(2)}</span></div><div class='flex justify-between gap-8 text-xs text-slate-300'>最高<span class='font-mono'>¥${h.toFixed(2)}</span></div></div>`; } }, 
+                grid: { left: isMobile ? '2%' : '3%', right: isMobile ? 65 : '8%', bottom: '8%', top: '8%', containLabel: true }, 
+                xAxis: { type: 'category', data: [], axisLine: { show: false }, splitLine: { show: false } }, 
+                yAxis: { type: 'value', scale: true, splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'solid' } }, axisLabel: { color: '#64748b', fontSize: isMobile ? 9 : 11, fontFamily: 'monospace' } }, 
+                // 🚀 核心修复 2：在图表初始化时，也仅声明 inside 一种缩放方式
+                dataZoom: [ { type: 'inside', xAxisIndex: 0, filterMode: 'empty' } ], 
+                series: [{ type: 'candlestick', data: [] }] 
             });
-            
-            chartInstance.on('dataZoom', function (params) {
-                if (params.batch || params.start != null) {
-                    needResetZoom = false; 
-                }
-            });
-
-            window.addEventListener('resize', () => { 
-                if (chartInstance) { chartInstance.resize(); renderKLine(); } 
-                if (leaderboardInstance) { leaderboardInstance.resize(); } 
-            });
+            chartInstance.on('dataZoom', function (p) { if (p.batch || p.start != null) needResetZoom = false; });
+            window.addEventListener('resize', () => { if (chartInstance) { chartInstance.resize(); renderKLine(); } if (leaderboardInstance) leaderboardInstance.resize(); });
         }
 
         function addAlert() {
-            const uid = document.getElementById('user-uid').value.trim();
-            if(!uid) { 
-                showToast("请先在上方填写并连接您的专属 UID！", true);
-                return; 
-            }
-            const n = document.getElementById('alert-name').value.trim();
-            const p = parseFloat(document.getElementById('alert-price').value);
-            const t = document.getElementById('alert-type').value;
-            if(n && !isNaN(p)) { 
-                const alertId = Date.now().toString(); 
-                userAlerts.push({id: alertId, name: n, price: p, type: t}); 
-                document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = ""; 
-                renderAlertTags(); syncAlerts(); if (lastResultData) updateUI(lastResultData);
-            }
+            const uid = document.getElementById('user-uid').value.trim(); if(!uid) { showToast("请先连接您的专用 UID！", true); return; }
+            const n = document.getElementById('alert-name').value.trim(), p = parseFloat(document.getElementById('alert-price').value), t = document.getElementById('alert-type').value;
+            if(n && !isNaN(p)) { const alertId = Date.now().toString(); userAlerts.push({id: alertId, name: n, price: p, type: t}); document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = ""; renderAlertTags(); syncAlerts(); if (lastResultData) updateUI(lastResultData); }
         }
         function removeAlert(i) { userAlerts.splice(i, 1); renderAlertTags(); syncAlerts(); }
-        
         function renderAlertTags() {
-            document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => {
-                const isUp = a.type === 'up';
-                const icon = isUp ? '<i class="ph-bold ph-trend-up text-[#ef4444]"></i>' : '<i class="ph-bold ph-trend-down text-[#22c55e]"></i>';
-                const symbol = isUp ? '≥' : '≤';
-                const colorCls = isUp ? 'text-[#ef4444]' : 'text-[#22c55e]';
-                const borderCls = isUp ? 'border-[#ef4444]/30 bg-[#ef4444]/10' : 'border-[#22c55e]/30 bg-[#22c55e]/10';
-                
-                return `<div class="${borderCls} border px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 text-[10px] sm:text-xs font-bold text-slate-200 shadow-sm">${icon} ${a.name} ${symbol} <span class="font-mono">¥${a.price}</span> <i class="ph ph-x-circle cursor-pointer hover:text-white transition-colors ml-1 opacity-70 hover:opacity-100" onclick="removeAlert(${i})"></i></div>`;
-            }).join('');
+            document.getElementById('active-alerts').innerHTML = userAlerts
+                .filter(a => !pendingKillList.has(a.id)) 
+                .map((a, i) => { 
+                    const isUp = a.type === 'up'; 
+                    const icon = isUp ? '<i class="ph-bold ph-trend-up text-[#ef4444]"></i>' : '<i class="ph-bold ph-trend-down text-[#22c55e]"></i>'; 
+                    const symbol = isUp ? '≥' : '≤'; 
+                    const borderCls = isUp ? 'border-[#ef4444]/30 bg-[#ef4444]/10' : 'border-[#22c55e]/30 bg-[#22c55e]/10'; 
+                    return `<div class="${borderCls} border px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 text-[10px] sm:text-xs font-bold text-slate-200 shadow-sm">${icon} ${a.name} ${symbol} <span class="font-mono">¥${a.price}</span> <i class="ph ph-x-circle cursor-pointer hover:text-white transition-colors ml-1 opacity-70 hover:opacity-100" onclick="removeAlert(${i})"></i></div>`; 
+                }).join('');
         }
         
-        function syncAlerts() {
-            if(!apiBaseUrl || !isRunning) return;
-            const uid = document.getElementById('user-uid').value;
-            
-            localStorage.setItem(`xmeta_alerts_${uid}`, JSON.stringify(userAlerts));
-            
-            showToast("配置已同步并存入保险箱");
-            fetch(`${apiBaseUrl}/update_alerts`, { 
-                method: 'POST', mode: 'cors', 
-                headers: { 'Content-Type': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' }, 
-                body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ id: a.id, name: a.name, target_price: a.price, type: a.type || 'down' })) }) 
-            }).catch(e => console.log("同步延迟"));
+        async function syncAlerts(silent = false) { 
+            if(!apiBaseUrl || !isRunning) return; 
+            const uid = document.getElementById('user-uid').value; 
+            localStorage.setItem(`xmeta_alerts_${uid}`, JSON.stringify(userAlerts)); 
+            if(!silent) showToast("预警配置已刷新"); 
+            try {
+                await fetch(`${apiBaseUrl}/update_alerts`, { 
+                    method: 'POST', 
+                    mode: 'cors', 
+                    headers: { 'Content-Type': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' }, 
+                    body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ id: a.id, name: a.name, target_price: a.price, type: a.type || 'down' })) }) 
+                });
+            } catch(e) { console.log("同步延迟"); }
         }
     </script>
 </body>
