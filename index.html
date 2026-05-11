@@ -118,7 +118,6 @@
 
         <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
             <div class="lg:col-span-5 h-[500px] lg:h-[780px] flex flex-col glass-panel p-4 sm:p-6 rounded-2xl shadow-xl">
-                <!-- 🚀 优化：总市值与总成交 上下分层数据卡片布局 -->
                 <div class="grid grid-cols-2 gap-4 mb-4 px-4 bg-[#12161b] py-4 rounded-xl border border-white/5">
                     <div class="flex flex-col gap-1 border-r border-white/10 pr-2 sm:pr-4">
                         <span class="text-[10px] sm:text-[11px] text-gray-500 font-bold uppercase tracking-widest mb-1">总市值</span>
@@ -142,17 +141,16 @@
 
             <div class="lg:col-span-7 space-y-4 sm:space-y-6">
                 <div class="glass-panel p-5 sm:p-8 rounded-2xl shadow-xl">
-                    <h2 class="text-xs sm:text-sm font-black text-gray-400 flex items-center gap-2 mb-4 sm:mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand" style="color: var(--brand)"></i> 藏品价格预警</h2>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <input id="alert-name" type="text" placeholder="关键字..." class="w-full sm:flex-1 bg-[#12161b] border border-white/5 rounded-xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white focus:border-brand">
+                    <h2 class="text-xs sm:text-sm font-black text-gray-400 flex items-center gap-2 mb-4 sm:mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand" style="color: var(--brand)"></i> 私人定制价格预警</h2>
+                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <input id="alert-name" type="text" placeholder="关键字..." class="w-full sm:flex-1 bg-[#12161b] border border-white/5 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white focus:border-brand min-w-0">
                         <div class="flex gap-2 sm:gap-4 w-full sm:w-auto">
-                            <!-- 🚀 双向预警：加入类型选择器 -->
-                            <select id="alert-type" class="bg-[#12161b] border border-white/5 rounded-xl px-2 py-2.5 sm:py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-brand cursor-pointer">
+                            <select id="alert-type" class="shrink-0 bg-[#12161b] border border-white/5 rounded-xl px-1 sm:px-2 py-2.5 sm:py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-brand cursor-pointer">
                                 <option value="down">跌破 ≤</option>
                                 <option value="up">突破 ≥</option>
                             </select>
-                            <input id="alert-price" type="number" placeholder="触发价" class="flex-1 sm:flex-none sm:w-32 bg-[#12161b] border border-white/5 rounded-xl px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white font-mono focus:outline-none focus:border-brand">
-                            <button onclick="addAlert()" class="bg-brand hover:bg-blue-600 text-white font-black rounded-xl px-4 sm:px-8 py-2.5 sm:py-3 text-[10px] sm:text-xs transition-all shadow-lg active:scale-95 shrink-0 whitespace-nowrap">部署任务</button>
+                            <input id="alert-price" type="number" placeholder="触发价" class="flex-1 min-w-[60px] sm:w-32 bg-[#12161b] border border-white/5 rounded-xl px-2 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white font-mono focus:outline-none focus:border-brand">
+                            <button onclick="addAlert()" class="bg-brand hover:bg-blue-600 text-white font-black rounded-xl px-3 sm:px-8 py-2.5 sm:py-3 text-[10px] sm:text-xs transition-all shadow-lg active:scale-95 shrink-0 whitespace-nowrap">部署任务</button>
                         </div>
                     </div>
                     <div id="active-alerts" class="mt-4 sm:mt-6 flex flex-wrap gap-2"></div>
@@ -189,11 +187,34 @@
                 return;
             }
             initChart();
-            if(localStorage.getItem('xmeta_url')) document.getElementById('api-url').value = localStorage.getItem('xmeta_url');
-            if(localStorage.getItem('xmeta_uid')) document.getElementById('user-uid').value = localStorage.getItem('xmeta_uid');
+            
+            // 恢复之前配置的 URL 和 UID
+            const savedUrl = localStorage.getItem('xmeta_url');
+            const savedUid = localStorage.getItem('xmeta_uid');
+            
+            if(savedUrl) document.getElementById('api-url').value = savedUrl;
+            if(savedUid) {
+                document.getElementById('user-uid').value = savedUid;
+                // 🚀 核心更新：启动时根据当前填入的 UID 加载专属的任务保险箱
+                loadAlertsForUid(savedUid);
+            }
         }
 
         window.onload = startApp;
+        
+        // 🚀 提取加载逻辑：根据 UID 动态加载专属任务
+        function loadAlertsForUid(uid) {
+            if(!uid) return;
+            const savedAlerts = localStorage.getItem(`xmeta_alerts_${uid}`);
+            if(savedAlerts) {
+                try {
+                    userAlerts = JSON.parse(savedAlerts);
+                } catch(e) { userAlerts = []; }
+            } else {
+                userAlerts = [];
+            }
+            renderAlertTags();
+        }
 
         function playAlertSound() {
             try {
@@ -251,19 +272,30 @@
         async function toggleMonitor() {
             if (isRunning) return;
             const uid = document.getElementById('user-uid').value.trim();
-            if(!uid) return alert("请先填写专属 UID");
+            if(!uid) {
+                showToast("请先填写专属 UID", true);
+                return;
+            }
             let rawUrl = document.getElementById('api-url').value.trim().replace(/\/$/, "");
             if (location.protocol === 'https:' && rawUrl.startsWith('http://')) {
                 rawUrl = rawUrl.replace('http://', 'https://');
                 document.getElementById('api-url').value = rawUrl;
             }
             apiBaseUrl = rawUrl;
+            
+            // 🚀 核心更新：如果你换了别人的 UID 启动，自动为你加载对应 UID 的任务！
+            if(uid !== localStorage.getItem('xmeta_uid')) {
+                 loadAlertsForUid(uid);
+            }
+            
             localStorage.setItem('xmeta_url', apiBaseUrl);
             localStorage.setItem('xmeta_uid', uid);
             isRunning = true;
             document.getElementById('start-btn').innerText = "正在监视市场";
             document.getElementById('start-btn').disabled = true;
+            
             syncAlerts();
+            
             fetchPricesData();
             setInterval(fetchPricesData, 2000);
         }
@@ -296,12 +328,11 @@
                 
                 let safeId = item.id || encodeURIComponent(item.name).replace(/%/g, '_');
                 
-                // 🚀 双向预警：检测是否触发涨跌条件
                 let triggeredAlert = userAlerts.find(a => item.name.includes(a.name) && (a.type === 'up' ? item.price >= a.price : item.price <= a.price));
                 let isAlert = !!triggeredAlert;
 
                 if (isAlert) {
-                    let alertKey = item.name + '_' + item.price + '_' + safeId + '_' + triggeredAlert.type;
+                    let alertKey = triggeredAlert.id; 
                     if (!triggeredAlerts.has(alertKey)) {
                         triggeredAlerts.add(alertKey); 
                         playAlertSound(); 
@@ -310,7 +341,6 @@
                     }
                 }
                 
-                // 根据预警类型高亮背景：上涨显示红色，下跌显示绿色（符合国内习惯）
                 let bgStyle = 'bg-[#12161b] border-white/5';
                 let priceColor = 'text-[#00d8a6]';
                 if (isAlert) {
@@ -469,7 +499,7 @@
                         return `<div class='p-1'><div class='font-bold text-gray-400 mb-2 border-b border-white/10 flex justify-between gap-8'><span>详情</span><span class='${up?'text-[#ff4d4f]':'text-[#00d8a6]'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-6 mb-1'>开盘<span>¥${d[1].toFixed(2)}</span></div><div class='flex justify-between gap-6 mb-1'>收盘<span class='font-bold'>¥${d[2].toFixed(2)}</span></div><div class='flex justify-between gap-6 mb-1'>最低<span>¥${d[3].toFixed(2)}</span></div><div class='flex justify-between gap-6'>最高<span>¥${d[4].toFixed(2)}</span></div></div>`;
                     }
                 },
-                grid: { left: isMobile ? '1%' : '3%', right: isMobile ? '12%' : '8%', bottom: '8%', top: '5%', containLabel: true },
+                grid: { left: isMobile ? '2%' : '3%', right: isMobile ? 65 : '8%', bottom: '8%', top: '5%', containLabel: true },
                 xAxis: { type: 'category', data: [], axisLine: { show: false }, splitLine: { show: false } },
                 yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, axisLabel: { color: '#4a5568', fontSize: isMobile ? 8 : 10 } },
                 dataZoom: [ { type: 'inside', xAxisIndex: 0 }, { type: 'slider', xAxisIndex: 0, height: 6, bottom: 0, borderColor: 'transparent', backgroundColor: 'rgba(255,255,255,0.05)', fillerColor: 'rgba(59, 130, 246, 0.4)', handleStyle: { opacity: 0 }, textStyle: { color: 'transparent' } } ],
@@ -478,20 +508,24 @@
             window.addEventListener('resize', () => { if (chartInstance) { chartInstance.resize(); renderKLine(); } });
         }
 
-        // 🚀 双向预警：加入类型收集
         function addAlert() {
+            const uid = document.getElementById('user-uid').value.trim();
+            if(!uid) { 
+                showToast("请先在上方填写并连接您的专属 UID！", true);
+                return; 
+            }
             const n = document.getElementById('alert-name').value.trim();
             const p = parseFloat(document.getElementById('alert-price').value);
             const t = document.getElementById('alert-type').value;
             if(n && !isNaN(p)) { 
-                userAlerts.push({name: n, price: p, type: t}); 
+                const alertId = Date.now().toString(); 
+                userAlerts.push({id: alertId, name: n, price: p, type: t}); 
                 document.getElementById('alert-name').value = ""; document.getElementById('alert-price').value = ""; 
                 renderAlertTags(); syncAlerts(); if (lastResultData) updateUI(lastResultData);
             }
         }
         function removeAlert(i) { userAlerts.splice(i, 1); renderAlertTags(); syncAlerts(); }
         
-        // 🚀 双向预警：根据类型显示不同的图标和符号
         function renderAlertTags() {
             document.getElementById('active-alerts').innerHTML = userAlerts.map((a, i) => {
                 const isUp = a.type === 'up';
@@ -504,12 +538,15 @@
         function syncAlerts() {
             if(!apiBaseUrl || !isRunning) return;
             const uid = document.getElementById('user-uid').value;
+            
+            // 🚀 核心更新：使用 UID 作为钥匙进行缓存。张三的浏览器存张三的，李四的存李四的！
+            localStorage.setItem(`xmeta_alerts_${uid}`, JSON.stringify(userAlerts));
+            
             showToast("配置已同步");
-            // 🚀 双向预警：将 type 发送给后端
             fetch(`${apiBaseUrl}/update_alerts`, { 
                 method: 'POST', mode: 'cors', 
                 headers: { 'Content-Type': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' }, 
-                body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ name: a.name, target_price: a.price, type: a.type || 'down' })) }) 
+                body: JSON.stringify({ uid: uid, alerts: userAlerts.map(a => ({ id: a.id, name: a.name, target_price: a.price, type: a.type || 'down' })) }) 
             }).catch(e => console.log("同步延迟"));
         }
     </script>
