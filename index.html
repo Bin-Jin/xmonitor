@@ -115,7 +115,7 @@
                     <div class="min-w-0">
                         <h1 class="text-xl sm:text-2xl font-black tracking-tighter text-white uppercase whitespace-nowrap overflow-visible">
                             <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400">XMeta</span>
-                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 font-black ml-1">典藏终端</span>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 font-black ml-1">典藏藏品大盘</span>
                         </h1>
                         <div class="flex items-center gap-2 mt-1"><div id="status-dot" class="w-2 h-2 rounded-full bg-slate-600 shrink-0 shadow-[0_0_8px_rgba(0,0,0,0)]"></div><span id="status-text" class="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-widest truncate">系统就绪 / 等待授权接入</span></div>
                     </div>
@@ -160,7 +160,7 @@
                         </div>
                     </div>
                     <div class="flex flex-col gap-1.5 pl-2 sm:pl-4">
-                        <span class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-0.5"><i class="ph-fill ph-chart-bar text-brand mr-1"></i>总成交数</span>
+                        <span class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-0.5"><i class="ph-fill ph-chart-bar text-brand mr-1"></i>总成交量</span>
                         <span id="global-deal-val" class="text-xl sm:text-2xl font-black text-white font-mono leading-none tracking-tight">0</span>
                         <div class="flex items-center gap-1.5 mt-1">
                             <span class="text-[9px] text-slate-500">24H变动</span>
@@ -175,7 +175,7 @@
                 <div class="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl">
                     <h2 class="text-xs sm:text-sm font-black text-slate-300 flex items-center gap-2.5 mb-5 sm:mb-6 uppercase tracking-widest"><i class="ph-fill ph-target text-brand"></i> 藏品价格预警</h2>
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                        <input id="alert-name" type="text" placeholder="输入藏品关键字..." class="w-full sm:flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-brand transition-colors min-w-0 shadow-inner">
+                        <input id="alert-name" type="text" placeholder="输入藏品全称..." class="w-full sm:flex-1 bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-brand transition-colors min-w-0 shadow-inner">
                         <div class="flex gap-2 sm:gap-3 w-full sm:w-auto">
                             <select id="alert-type" class="shrink-0 bg-slate-900/60 border border-slate-700/50 rounded-xl px-2 sm:px-3 py-3 text-xs sm:text-sm text-white focus:outline-none focus:border-brand cursor-pointer shadow-inner">
                                 <option value="down">跌破 ≤</option>
@@ -421,8 +421,7 @@
             if (!leaderboardInstance || data.length === 0) return;
             const isMobile = window.innerWidth < 640;
             
-            // 🚀 核心修复：使用 startValue 和 endValue 固定显示条数，并应用到 inside 组件
-            let currentStartValue = Math.max(0, data.length - 20); // 默认显示最顶部的 20 条
+            let currentStartValue = Math.max(0, data.length - 20); 
             let currentEndValue = data.length - 1;
 
             const currentOption = leaderboardInstance.getOption();
@@ -444,7 +443,6 @@
 
             leaderboardInstance.setOption({
                 tooltip: { trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(255,255,255,0.05)' } }, formatter: function (params) { let d = params[0].data; if (!d) return ''; let sign = d.rate > 0 ? '+' : ''; let color = d.rate > 0 ? '#ef4444' : (d.rate < 0 ? '#22c55e' : '#94a3b8'); return `<div class='p-2'><div class='font-bold text-white mb-2 border-b border-white/10 pb-2 text-sm'>${params[0].name}</div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>当前价<span class='text-white font-mono'>¥${d.price.toFixed(2)}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>24H跌涨<span class='font-bold font-mono' style='color:${color}'>${sign}${d.rate.toFixed(2)}%</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>成交额<span class='text-white font-mono'>¥${formatMarketValue(d.value)}</span></div><div class='flex justify-between gap-8 text-xs text-slate-300'>成交笔数<span class='text-white font-mono'>${d.dealCount}笔</span></div></div>`; }, backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(59,130,246,0.5)', borderWidth: 1, textStyle: { color: '#f8fafc', fontSize: 12 }, padding: [8, 12] },
-                // 🚀 核心修改：只使用 inside，并且带上 startValue 和 endValue，避免挤成一堆
                 dataZoom: [ 
                     { 
                         type: 'inside', 
@@ -455,7 +453,15 @@
                         moveOnMouseWheel: true   
                     } 
                 ],
-                grid: { left: isMobile ? '2%' : '5%', right: isMobile ? '12%' : '12%', bottom: '5%', top: '2%', containLabel: true }, xAxis: { type: 'value', splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, axisLabel: { color: '#94a3b8', fontWeight: 'bold', formatter: (val) => formatMarketValue(val), fontSize: 10, fontFamily: 'monospace' } }, yAxis: { type: 'category', data: yAxisData, axisLabel: { color: '#f8fafc', fontSize: isMobile ? 10 : 12, fontWeight: 'bold', margin: 12 }, axisLine: { show: false }, axisTick: { show: false } },
+                // 🚀 X 轴优化：减少手机端的刻度数量并开启智能防重叠
+                grid: { left: isMobile ? '2%' : '5%', right: isMobile ? '12%' : '12%', bottom: '5%', top: '2%', containLabel: true }, 
+                xAxis: { 
+                    type: 'value', 
+                    splitNumber: isMobile ? 3 : 5, 
+                    splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, 
+                    axisLabel: { hideOverlap: true, color: '#94a3b8', fontWeight: 'bold', formatter: (val) => formatMarketValue(val), fontSize: isMobile ? 9 : 10, fontFamily: 'monospace' } 
+                }, 
+                yAxis: { type: 'category', data: yAxisData, axisLabel: { color: '#f8fafc', fontSize: isMobile ? 10 : 12, fontWeight: 'bold', margin: 12 }, axisLine: { show: false }, axisTick: { show: false } },
                 series: [{ type: 'bar', data: seriesData, barWidth: isMobile ? 10 : 16, showBackground: true, backgroundStyle: { color: 'rgba(255,255,255,0.02)', borderRadius: [0, 4, 4, 0] }, label: { show: true, position: 'right', formatter: function(params) { let rate = params.data.rate; let sign = rate > 0 ? '+' : ''; let style = rate > 0 ? 'upRate' : (rate < 0 ? 'downRate' : 'flatRate'); return `{${style}|${sign}${rate.toFixed(2)}%}`; }, rich: { upRate: { color: '#ef4444', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 9 : 11, padding: [0, 0, 0, 8], textShadowBlur: 4, textShadowColor: 'rgba(239,68,68,0.3)' }, downRate: { color: '#22c55e', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 9 : 11, padding: [0, 0, 0, 8], textShadowBlur: 4, textShadowColor: 'rgba(34,197,94,0.3)' }, flatRate: { color: '#94a3b8', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 9 : 11, padding: [0, 0, 0, 8] } } } }]
             });
             leaderboardFirstRender = false; 
@@ -468,16 +474,19 @@
             let xAxisData = new Array(xAxisLength).fill(''); let seriesData = displayData.map(d => [d[0], d[1], d[2], d[3]]);
             const validData = displayData.filter(d => d && d[0] > 0); let minP = Math.min(...validData.map(d => d[2])), maxP = Math.max(...validData.map(d => d[3]));
             let pad = (maxP - minP) * 0.1 || 0.2; let currentClose = displayData[displayData.length - 1][1];
+            
             let currentOption = chartInstance.getOption(); let isAtRight = true; let currentStartIdx = 0; let currentEndIdx = xAxisLength;
             if (currentOption && currentOption.dataZoom && currentOption.dataZoom[0]) { let dz = currentOption.dataZoom[0]; currentStartIdx = Math.round(dz.startValue); currentEndIdx = Math.round(dz.endValue); isAtRight = dz.endValue >= (xAxisLength - 1.5); }
-            let finalZoom = [];
             
-            // 🚀 核心修复 1：将每次更新时的 dataZoom 配置精简为仅 1 个数组元素（只保留 Inside 模式），彻底拔除底部的 Slider 组件
+            // 🚀 核心修复：仅在需要重置视口或保持右侧跟随才显式覆盖 dataZoom，不再强制锁定用户的缩放动作
+            let finalZoom = null;
             if (needResetZoom) { let end = xAxisLength; let start = Math.max(0, end - viewWindowSize); finalZoom = [{ startValue: start, endValue: end }]; needResetZoom = false; } 
             else if (isAtRight) { let viewSpan = currentEndIdx - currentStartIdx; let end = xAxisLength; let start = Math.max(0, end - viewSpan); finalZoom = [{ startValue: start, endValue: end }]; } 
-            else { finalZoom = [{ startValue: currentStartIdx, endValue: currentEndIdx }]; }
             
-            chartInstance.setOption({ animation: false, xAxis: { data: xAxisData, boundaryGap: true }, yAxis: { min: (minP - pad).toFixed(2), max: (maxP + pad).toFixed(2) }, dataZoom: finalZoom, series: [{ type: 'candlestick', data: seriesData, barCategoryGap: '28%', itemStyle: { color: '#ef4444', color0: '#00d8a6', borderColor: '#ef4444', borderColor0: '#00d8a6', borderWidth: 1.5 }, markLine: { symbol: ['none', 'none'], data: [{ yAxis: currentClose }], animation: false, lineStyle: { color: '#ef4444', type: 'dashed', width: 1.5, shadowBlur: 5, shadowColor: 'rgba(239,68,68,0.5)' }, label: { show: true, position: 'end', formatter: '¥{c}', backgroundColor: '#ef4444', color: '#fff', padding: [4, 6], borderRadius: 4, fontWeight: 'bold', fontFamily: 'monospace' } } }] }, { notMerge: false, lazyUpdate: true });
+            let chartOpt = { animation: false, xAxis: { data: xAxisData, boundaryGap: true }, yAxis: { min: (minP - pad).toFixed(2), max: (maxP + pad).toFixed(2) }, series: [{ type: 'candlestick', data: seriesData, barCategoryGap: '28%', itemStyle: { color: '#ef4444', color0: '#00d8a6', borderColor: '#ef4444', borderColor0: '#00d8a6', borderWidth: 1.5 }, markLine: { symbol: ['none', 'none'], data: [{ yAxis: currentClose }], animation: false, lineStyle: { color: '#ef4444', type: 'dashed', width: 1.5, shadowBlur: 5, shadowColor: 'rgba(239,68,68,0.5)' }, label: { show: true, position: 'end', formatter: '¥{c}', backgroundColor: '#ef4444', color: '#fff', padding: [4, 6], borderRadius: 4, fontWeight: 'bold', fontFamily: 'monospace' } } }] };
+            if (finalZoom) chartOpt.dataZoom = finalZoom;
+            
+            chartInstance.setOption(chartOpt, { notMerge: false, lazyUpdate: true });
         }
 
         function initChart() {
@@ -489,7 +498,6 @@
                 grid: { left: isMobile ? '2%' : '3%', right: isMobile ? 65 : '8%', bottom: '8%', top: '8%', containLabel: true }, 
                 xAxis: { type: 'category', data: [], axisLine: { show: false }, splitLine: { show: false } }, 
                 yAxis: { type: 'value', scale: true, splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'solid' } }, axisLabel: { color: '#64748b', fontSize: isMobile ? 9 : 11, fontFamily: 'monospace' } }, 
-                // 🚀 核心修复 2：在图表初始化时，也仅声明 inside 一种缩放方式
                 dataZoom: [ { type: 'inside', xAxisIndex: 0, filterMode: 'empty' } ], 
                 series: [{ type: 'candlestick', data: [] }] 
             });
