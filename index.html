@@ -6,7 +6,7 @@
     <meta name="referrer" content="no-referrer">
     <meta name="color-scheme" content="dark">
     
-    <title>XMeta 典藏行情终端</title>
+    <title>XMeta 行情终端 (测试环境)</title>
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' fill='none'%3E%3Cpath d='M30 4L54 16V44L30 56L6 44V16L30 4Z' fill='%233b82f6'/%3E%3Cpath d='M22 30L28 42L42 18' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 
@@ -37,8 +37,6 @@
     </script>
     <style>
         :root { --brand: #3b82f6; --up: #ef4444; --price: #00d8a6; --down: #22c55e; }
-        
-        /* 🚀 彻底隐藏浏览器全局及局部滚动条，保持界面纯净 */
         ::-webkit-scrollbar { width: 0px; height: 0px; display: none; }
         * { scrollbar-width: none; -ms-overflow-style: none; }
 
@@ -117,9 +115,16 @@
                     <div class="min-w-0">
                         <h1 class="text-xl sm:text-2xl font-black tracking-tighter text-white uppercase whitespace-nowrap overflow-visible">
                             <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400">XMeta</span>
-                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 font-black ml-1">典藏行情大盘</span>
+                            <span id="main-title" class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 font-black ml-1">典藏板块</span>
                         </h1>
-                        <div class="flex items-center gap-2 mt-1"><div id="status-dot" class="w-2 h-2 rounded-full bg-slate-600 shrink-0 shadow-[0_0_8px_rgba(0,0,0,0)]"></div><span id="status-text" class="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-widest truncate">系统就绪 / 等待授权接入</span></div>
+                        <div class="flex items-center gap-2 mt-1 mb-2"><div id="status-dot" class="w-2 h-2 rounded-full bg-slate-600 shrink-0 shadow-[0_0_8px_rgba(0,0,0,0)]"></div><span id="status-text" class="text-[9px] sm:text-[10px] font-mono text-slate-400 uppercase tracking-widest truncate">系统就绪 / 等待授权接入</span></div>
+                        
+                        <div class="flex items-center gap-2 mt-2 flex-wrap">
+                            <button onclick="switchSection('diancang')" id="tab-diancang" class="btn-gradient px-3 py-1 rounded-lg text-[10px] font-bold text-white shadow-md transition-all">典藏板块</button>
+                            <button onclick="switchSection('hot')" id="tab-hot" class="bg-[#12161b] border border-slate-700/50 hover:border-brand/50 px-3 py-1 rounded-lg text-[10px] font-bold text-slate-400 transition-colors">全站热榜前100</button>
+                            <button onclick="switchSection('jin195')" id="tab-jin195" class="bg-[#12161b] border border-slate-700/50 hover:border-brand/50 px-3 py-1 rounded-lg text-[10px] font-bold text-slate-400 transition-colors">禁出195</button>
+                            <button onclick="switchSection('jingtan50')" id="tab-jingtan50" class="bg-[#12161b] border border-slate-700/50 hover:border-brand/50 px-3 py-1 rounded-lg text-[10px] font-bold text-slate-400 transition-colors">鲸探50</button>
+                        </div>
                     </div>
                 </div>
                 <div class="mt-6 sm:mt-8 space-y-3 relative z-10">
@@ -128,7 +133,7 @@
                         <input id="auth-code" type="password" placeholder="专属授权码 (必填)" class="w-full sm:w-1/2 bg-[#020617]/50 border border-slate-700/50 rounded-xl px-4 py-2.5 sm:py-3 text-xs text-white font-mono transition-colors focus:outline-none focus:border-brand">
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                        <input id="api-url" type="text" placeholder="https://xxxx.cpolar.cn" class="w-full bg-[#020617]/50 border border-slate-700/50 rounded-xl px-4 py-2.5 sm:py-3 text-xs text-white transition-colors focus:outline-none focus:border-brand">
+                        <input id="api-url" type="text" placeholder="http://127.0.0.1:5000" class="w-full bg-[#020617]/50 border border-slate-700/50 rounded-xl px-4 py-2.5 sm:py-3 text-xs text-white transition-colors focus:outline-none focus:border-brand">
                         <button onclick="toggleMonitor()" id="start-btn" class="btn-gradient w-full sm:w-auto text-white px-6 py-2.5 sm:py-3 rounded-xl text-xs font-bold shrink-0 shadow-lg">启动链路</button>
                     </div>
                 </div>
@@ -138,14 +143,14 @@
                 <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 20px 20px;"></div>
                 
                 <div class="w-full md:flex-1 text-center md:text-left relative z-10">
-                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 sm:mb-3 flex items-center justify-center md:justify-start gap-2"><i class="ph-bold ph-globe"></i> 典藏藏品均价指数</p>
+                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 sm:mb-3 flex items-center justify-center md:justify-start gap-2"><i class="ph-bold ph-globe"></i> 市场均价实时指数</p>
                     <div class="flex items-baseline justify-center md:justify-start gap-4">
                         <span id="avg-price" class="text-5xl sm:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-400 font-mono tracking-tighter drop-shadow-sm">0.00</span>
                     </div>
                 </div>
                 <div class="w-full grid grid-cols-2 gap-4 sm:gap-8 border-t md:border-t-0 md:border-l border-slate-700/50 pt-5 md:pt-0 md:pl-12 h-full py-2 text-center md:text-left relative z-10">
                     <div><p class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase mb-1.5 tracking-wider">监控项目数</p><p id="item-count" class="text-xl sm:text-3xl font-bold text-slate-200 font-mono">0</p></div>
-                    <div><p class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase mb-1.5 tracking-wider">最后同步时间</p><p id="sync-time" class="text-xl sm:text-3xl font-bold text-brand font-mono drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">--:--:--</p></div>
+                    <div><p class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase mb-1.5 tracking-wider">最后同步</p><p id="sync-time" class="text-xl sm:text-3xl font-bold text-brand font-mono drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">--:--:--</p></div>
                 </div>
             </div>
         </header>
@@ -162,7 +167,7 @@
                         </div>
                     </div>
                     <div class="flex flex-col gap-1.5 pl-2 sm:pl-4">
-                        <span class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-0.5"><i class="ph-fill ph-chart-bar text-brand mr-1"></i>总成交量</span>
+                        <span class="text-[10px] sm:text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-0.5"><i class="ph-fill ph-chart-bar text-brand mr-1"></i>总成交</span>
                         <span id="global-deal-val" class="text-xl sm:text-2xl font-black text-white font-mono leading-none tracking-tight">0</span>
                         <div class="flex items-center gap-1.5 mt-1">
                             <span class="text-[9px] text-slate-500">24H变动</span>
@@ -192,7 +197,7 @@
 
                 <div class="glass-panel p-5 sm:p-6 rounded-3xl h-[320px] md:h-[450px] flex flex-col shadow-xl">
                     <div class="flex justify-between items-center mb-3 sm:mb-4">
-                        <h3 class="text-[10px] sm:text-sm font-black text-slate-300 flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-line-up text-brand"></i> 典藏指数实时走势 <span class="text-[9px] font-normal lowercase hidden sm:inline text-slate-500">(可滑动/缩放历史)</span></h3>
+                        <h3 class="text-[10px] sm:text-sm font-black text-slate-300 flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-line-up text-brand"></i> 指数实时走势 <span class="text-[9px] font-normal lowercase hidden sm:inline text-slate-500">(可滑动/缩放历史)</span></h3>
                         <div class="flex gap-1 bg-slate-900/60 p-1 rounded-lg border border-slate-700/50 overflow-x-auto shadow-inner">
                             <button onclick="switchFrame('1m')" id="btn-1m" class="px-2.5 sm:px-3.5 py-1.5 rounded-md text-[9px] sm:text-xs font-bold tab-btn-active shrink-0 transition-colors">1分</button>
                             <button onclick="switchFrame('5m')" id="btn-5m" class="px-2.5 sm:px-3.5 py-1.5 rounded-md text-[9px] sm:text-xs font-bold text-slate-400 hover:text-slate-200 shrink-0 transition-colors">5分</button>
@@ -207,7 +212,7 @@
             <div class="lg:col-span-12 glass-panel p-5 sm:p-8 rounded-3xl shadow-xl h-[600px] sm:h-[800px] flex flex-col relative overflow-hidden">
                 <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-brand/10 rounded-[100%] blur-3xl pointer-events-none"></div>
                 <div class="flex justify-between items-center mb-4 sm:mb-6 relative z-10">
-                    <h3 class="text-[11px] sm:text-sm font-black text-white flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-bar text-brand"></i> 典藏市场活跃藏品排行 <span class="text-[9px] sm:text-[10px] font-normal lowercase hidden sm:inline text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50 ml-2">滑动查看全部</span></h3>
+                    <h3 class="text-[11px] sm:text-sm font-black text-white flex items-center gap-2 uppercase tracking-widest"><i class="ph-fill ph-chart-bar text-brand"></i> 市场活跃阵地排行 <span class="text-[9px] sm:text-[10px] font-normal lowercase hidden sm:inline text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50 ml-2">滚动查看更多</span></h3>
                 </div>
                 <div id="leaderboardChart" class="flex-1 w-full relative z-10"></div>
             </div>
@@ -216,6 +221,7 @@
 
     <script>
         let isRunning = false, userAlerts = [], chartInstance = null, leaderboardInstance = null, currentFrame = '1m';
+        let currentSection = 'diancang'; 
         let klineData = [], liveCandle = null, lastPointCount = 0;
         let lastPrices = {}, toastTimeout, apiBaseUrl = "", fetchLock = false; 
         let lastHistory = null, lastResultData = null; 
@@ -273,35 +279,124 @@
             isRunning = false; fetchLock = false;
             if (monitorInterval) clearInterval(monitorInterval);
             const startBtn = document.getElementById('start-btn');
-            startBtn.innerText = "启动链路"; startBtn.disabled = false;
-            document.getElementById('user-uid').disabled = false; document.getElementById('auth-code').disabled = false;
-            startBtn.className = "btn-gradient w-full sm:w-auto text-white px-6 py-2.5 sm:py-3 rounded-xl text-xs font-bold shrink-0 shadow-lg";
-            document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-up shadow-[0_0_8px_rgba(239,68,68,0.8)] shrink-0";
-            document.getElementById('status-text').innerText = "链路断开";
+            if(startBtn) {
+                startBtn.innerText = "启动链路"; startBtn.disabled = false;
+                startBtn.className = "btn-gradient w-full sm:w-auto text-white px-6 py-2.5 sm:py-3 rounded-xl text-xs font-bold shrink-0 shadow-lg";
+            }
+            let uidEl = document.getElementById('user-uid'), authEl = document.getElementById('auth-code');
+            if(uidEl) uidEl.disabled = false; 
+            if(authEl) authEl.disabled = false;
+            let dot = document.getElementById('status-dot'), txt = document.getElementById('status-text');
+            if(dot) dot.className = "w-2 h-2 rounded-full bg-up shadow-[0_0_8px_rgba(239,68,68,0.8)] shrink-0";
+            if(txt) txt.innerText = "链路断开";
+        }
+
+        function switchSection(sec) {
+            if(currentSection === sec) return;
+            currentSection = sec;
+            
+            const activeClass = "btn-gradient px-3 py-1 rounded-lg text-[10px] font-bold text-white shadow-md transition-all";
+            const inactiveClass = "bg-[#12161b] border border-slate-700/50 hover:border-brand/50 px-3 py-1 rounded-lg text-[10px] font-bold text-slate-400 transition-colors";
+            
+            document.getElementById('tab-diancang').className = sec === 'diancang' ? activeClass : inactiveClass;
+            document.getElementById('tab-hot').className = sec === 'hot' ? activeClass : inactiveClass;
+            document.getElementById('tab-jin195').className = sec === 'jin195' ? activeClass : inactiveClass;
+            document.getElementById('tab-jingtan50').className = sec === 'jingtan50' ? activeClass : inactiveClass;
+            
+            const titleMap = { 
+                'diancang': '典藏板块', 
+                'hot': '全站热榜',
+                'jin195': '禁出195板块',
+                'jingtan50': '鲸探50板块'
+            };
+            document.getElementById('main-title').innerText = titleMap[sec];
+            
+            klineData = []; liveCandle = null; needResetZoom = true;
+            document.getElementById('price-list').innerHTML = '<div class="text-center text-slate-500 text-xs py-10 italic">切换板块中，正在拉取数据...</div>';
+            
+            if(chartInstance) {
+                chartInstance.clear(); 
+                initChart();           
+            }
+            if(leaderboardInstance) {
+                leaderboardInstance.clear();
+                initLeaderboard();
+            }
+            
+            document.getElementById('avg-price').innerText = "0.00";
+            document.getElementById('item-count').innerText = "0";
+            
+            if(isRunning) {
+                fetchLock = false; 
+                if (monitorInterval) clearInterval(monitorInterval);
+                fetchPricesData();
+                monitorInterval = setInterval(fetchPricesData, 2000);
+            }
         }
 
         async function fetchPricesData() {
             if (!isRunning || fetchLock) return;
             fetchLock = true;
-            const uid = document.getElementById('user-uid').value.trim(), authCode = document.getElementById('auth-code').value.trim();
-            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const uid = document.getElementById('user-uid').value.trim();
+            const authCode = document.getElementById('auth-code').value.trim();
+            const controller = new AbortController(); 
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            let result = null;
+
             try {
-                const res = await fetch(`${apiBaseUrl}/prices?uid=${encodeURIComponent(uid)}&code=${encodeURIComponent(authCode)}`, { method: 'GET', cache: 'no-cache', mode: 'cors', signal: controller.signal, headers: { 'Accept': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' } });
+                const res = await fetch(`${apiBaseUrl}/prices?uid=${encodeURIComponent(uid)}&code=${encodeURIComponent(authCode)}&section=${currentSection}`, { 
+                    method: 'GET', cache: 'no-cache', mode: 'cors', signal: controller.signal, 
+                    headers: { 'Accept': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' } 
+                });
                 clearTimeout(timeoutId);
-                if (res.status === 403) { const result = await res.json(); handleAuthFailed(result.msg); return; }
-                const result = await res.json();
-                if (result.status === 'auth_failed') { handleAuthFailed(result.msg); return; }
-                if (result.status === 'success') {
-                    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-price shadow-[0_0_8px_rgba(0,216,166,0.8)] animate-pulse shrink-0";
-                    document.getElementById('status-text').innerText = "同步中";
-                    lastHistory = result.history; lastResultData = result; 
-                    if (result.history && result.history[currentFrame]) { klineData = result.history[currentFrame]; lastPointCount = klineData.length; }
-                    updateUI(result);
+                
+                if (res.status === 403) { 
+                    result = await res.json(); 
+                    handleAuthFailed(result.msg); 
+                    fetchLock = false;
+                    return; 
                 }
+                result = await res.json();
             } catch (e) { 
                 clearTimeout(timeoutId);
-                if(isRunning) { document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-up shrink-0"; document.getElementById('status-text').innerText = "链路异常"; }
-            } finally { fetchLock = false; }
+                console.error("网络连通性异常或请求被阻断:", e);
+                if(isRunning) { 
+                    let dot = document.getElementById('status-dot');
+                    let txt = document.getElementById('status-text');
+                    if(dot) dot.className = "w-2 h-2 rounded-full bg-[#ef4444] shrink-0"; 
+                    if(txt) txt.innerText = "链路异常 (请检查本地Python服务端)"; 
+                }
+                fetchLock = false; 
+                return;
+            }
+
+            fetchLock = false; 
+
+            if (result) {
+                if (result.status === 'auth_failed') { 
+                    handleAuthFailed(result.msg); 
+                    return; 
+                }
+                if (result.status === 'success') {
+                    let dot = document.getElementById('status-dot');
+                    let txt = document.getElementById('status-text');
+                    if(dot) dot.className = "w-2 h-2 rounded-full bg-[#00d8a6] shadow-[0_0_8px_rgba(0,216,166,0.8)] animate-pulse shrink-0";
+                    if(txt) txt.innerText = "同步中";
+                    
+                    lastHistory = result.history; 
+                    lastResultData = result; 
+                    
+                    if (result.history && result.history[currentFrame]) { 
+                        klineData = result.history[currentFrame]; 
+                        lastPointCount = klineData.length; 
+                    }
+                    try {
+                        updateUI(result);
+                    } catch(err) {
+                        console.error("UI渲染引擎报错:", err);
+                    }
+                }
+            }
         }
 
         async function toggleMonitor() {
@@ -366,8 +461,16 @@
             let sumPrice = 0, totalMarket = 0, totalMarketYtd = 0, totalDeal = 0, totalDealAmt = 0, totalDealAmtYtd = 0;
             let validPricesCount = 0; let htmlBuffer = []; let leaderboardData = []; 
 
+            if (!result.data || result.data.length === 0) {
+                list.innerHTML = '<div class="text-center text-slate-500 text-xs py-10 italic">暂无有效数据，请等待下一轮抓取...</div>';
+                return;
+            }
+
             result.data.forEach(item => {
-                if (item.price > 0) { sumPrice += item.price; validPricesCount++; }
+                if (item.price > 0) { 
+                    sumPrice += item.price; 
+                    validPricesCount++; 
+                }
                 totalMarket += item.marketAmount; totalDeal += item.dealCount; totalDealAmt += item.dealAmount;
                 totalMarketYtd += item.marketRate > -99.9 ? (item.marketAmount / (1 + item.marketRate / 100)) : item.marketAmount;
                 totalDealAmtYtd += item.dealRate > -99.9 ? (item.dealAmount / (1 + item.dealRate / 100)) : item.dealAmount;
@@ -376,21 +479,15 @@
                 
                 let isAlert = false;
                 userAlerts.forEach((alert) => {
-                    let hit = alert.type === 'up' ? item.price >= alert.price : item.price <= alert.price;
-                    if (item.name.includes(alert.name) && hit) {
+                    let hit = item.name.includes(alert.name) && item.price <= alert.price;
+                    if (hit) {
                         isAlert = true; 
-                        
                         if (!triggeredAlerts.has(alert.id)) {
                             triggeredAlerts.add(alert.id);
                             fetch(`${apiBaseUrl}/assist_trigger`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json', 'cpolar-skip-browser-warning': 'true', 'ngrok-skip-browser-warning': 'true' },
-                                body: JSON.stringify({ 
-                                    uid: document.getElementById('user-uid').value.trim(), 
-                                    alert_id: alert.id, 
-                                    name: item.name, 
-                                    price: item.price 
-                                })
+                                body: JSON.stringify({ uid: document.getElementById('user-uid').value.trim(), alert_id: alert.id, name: item.name, price: item.price })
                             }).catch(e => {});
 
                             pendingKillList.add(alert.id);
@@ -426,10 +523,22 @@
             document.getElementById('global-market-rate').innerHTML = formatRate(totalMarketYtd > 0 ? ((totalMarket - totalMarketYtd) / totalMarketYtd) * 100 : 0);
             document.getElementById('global-deal-val').innerText = totalDeal;
             document.getElementById('global-deal-rate').innerHTML = formatRate(totalDealAmtYtd > 0 ? ((totalDealAmt - totalDealAmtYtd) / totalDealAmtYtd) * 100 : 0);
+            
             const currentAvg = validPricesCount > 0 ? Number((sumPrice / validPricesCount).toFixed(2)) : 0;
-            document.getElementById('avg-price').innerText = currentAvg.toFixed(2); document.getElementById('item-count').innerText = result.data.length; document.getElementById('sync-time').innerText = result.time;
-            if (result.temp && result.temp[currentFrame]) { let tc = result.temp[currentFrame]; liveCandle = [tc.o, tc.c, tc.l, tc.h]; } else if (currentAvg > 0) { if (!liveCandle || liveCandle[0] === 0) liveCandle = [currentAvg, currentAvg, currentAvg, currentAvg]; else { liveCandle[1] = currentAvg; liveCandle[3] = Math.max(liveCandle[3], currentAvg); liveCandle[2] = Math.min(liveCandle[2], currentAvg); } }
-            renderKLine(); renderLeaderboard(leaderboardData); 
+            document.getElementById('avg-price').innerText = currentAvg.toFixed(2); 
+            document.getElementById('item-count').innerText = result.data.length; 
+            document.getElementById('sync-time').innerText = result.time;
+            
+            if (result.temp && result.temp[currentFrame]) { 
+                let tc = result.temp[currentFrame]; 
+                liveCandle = [tc.o, tc.c, tc.l, tc.h]; 
+            } else if (currentAvg > 0) { 
+                if (!liveCandle || liveCandle[0] === 0) liveCandle = [currentAvg, currentAvg, currentAvg, currentAvg]; 
+                else { liveCandle[1] = currentAvg; liveCandle[3] = Math.max(liveCandle[3], currentAvg); liveCandle[2] = Math.min(liveCandle[2], currentAvg); } 
+            }
+            
+            renderKLine(); 
+            renderLeaderboard(leaderboardData); 
         }
 
         function switchFrame(frame) {
@@ -438,9 +547,21 @@
                 const btn = document.getElementById(`btn-${f}`);
                 if (btn) btn.className = f === frame ? "px-2.5 sm:px-3.5 py-1.5 rounded-md text-[9px] sm:text-xs font-bold tab-btn-active shrink-0 transition-colors" : "px-2.5 sm:px-3.5 py-1.5 rounded-md text-[9px] sm:text-xs font-bold text-slate-400 hover:text-slate-200 shrink-0 transition-colors";
             });
+            
+            if(chartInstance) {
+                chartInstance.clear();
+                initChart();
+            }
+
             if (lastHistory && lastHistory[frame]) { klineData = lastHistory[frame]; lastPointCount = klineData.length; } else { klineData = []; lastPointCount = 0; }
-            if (lastResultData && lastResultData.temp && lastResultData.temp[frame]) { let tc = lastResultData.temp[frame]; liveCandle = [tc.o, tc.c, tc.l, tc.h]; }
-            needResetZoom = true; renderKLine();
+            if (lastResultData && lastResultData.temp && lastResultData.temp[frame]) { 
+                let tc = lastResultData.temp[frame]; 
+                let currentAvgText = document.getElementById('avg-price').innerText;
+                let currentAvg = parseFloat(currentAvgText) || tc.c;
+                liveCandle = [tc.o, currentAvg, Math.min(tc.l, currentAvg), Math.max(tc.h, currentAvg)]; 
+            }
+            needResetZoom = true; 
+            renderKLine();
         }
 
         function initLeaderboard() {
@@ -456,9 +577,11 @@
             let currentEndValue = data.length - 1;
 
             const currentOption = leaderboardInstance.getOption();
-            if (currentOption && currentOption.dataZoom && !leaderboardFirstRender) {
-                currentStartValue = currentOption.dataZoom[0].startValue;
-                currentEndValue = currentOption.dataZoom[0].endValue;
+            if (currentOption && currentOption.dataZoom && currentOption.dataZoom[0] && !leaderboardFirstRender) {
+                if(currentOption.dataZoom[0].startValue !== undefined && currentOption.dataZoom[0].startValue !== null) {
+                    currentStartValue = currentOption.dataZoom[0].startValue;
+                    currentEndValue = currentOption.dataZoom[0].endValue;
+                }
             }
 
             data.sort((a, b) => b.value - a.value);
@@ -474,64 +597,192 @@
 
             leaderboardInstance.setOption({
                 tooltip: { trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(255,255,255,0.05)' } }, formatter: function (params) { let d = params[0].data; if (!d) return ''; let sign = d.rate > 0 ? '+' : ''; let color = d.rate > 0 ? '#ef4444' : (d.rate < 0 ? '#22c55e' : '#94a3b8'); return `<div class='p-2'><div class='font-bold text-white mb-2 border-b border-white/10 pb-2 text-sm'>${params[0].name}</div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>当前价<span class='text-white font-mono'>¥${d.price.toFixed(2)}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>24H跌涨<span class='font-bold font-mono' style='color:${color}'>${sign}${d.rate.toFixed(2)}%</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>成交额<span class='text-white font-mono'>¥${formatMarketValue(d.value)}</span></div><div class='flex justify-between gap-8 text-xs text-slate-300'>成交笔数<span class='text-white font-mono'>${d.dealCount}笔</span></div></div>`; }, backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(59,130,246,0.5)', borderWidth: 1, textStyle: { color: '#f8fafc', fontSize: 12 }, padding: [8, 12] },
-                dataZoom: [ 
-                    { 
-                        type: 'inside', 
-                        yAxisIndex: 0,
-                        startValue: currentStartValue,
-                        endValue: currentEndValue,
-                        zoomOnMouseWheel: false, 
-                        moveOnMouseWheel: true   
-                    } 
-                ],
+                dataZoom: [ { type: 'inside', yAxisIndex: 0, startValue: currentStartValue, endValue: currentEndValue, zoomOnMouseWheel: false, moveOnMouseWheel: true } ],
                 grid: { left: isMobile ? '2%' : '5%', right: isMobile ? '12%' : '12%', bottom: '5%', top: '2%', containLabel: true }, 
-                xAxis: { 
-                    type: 'value', 
-                    splitNumber: isMobile ? 3 : 5, 
-                    splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, 
-                    axisLabel: { hideOverlap: true, color: '#94a3b8', fontWeight: 'bold', formatter: (val) => formatMarketValue(val), fontSize: isMobile ? 9 : 10, fontFamily: 'monospace' } 
-                }, 
+                xAxis: { type: 'value', splitNumber: isMobile ? 3 : 5, splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, axisLabel: { hideOverlap: true, color: '#94a3b8', fontWeight: 'bold', formatter: (val) => formatMarketValue(val), fontSize: isMobile ? 9 : 10, fontFamily: 'monospace' } }, 
                 yAxis: { type: 'category', data: yAxisData, axisLabel: { color: '#f8fafc', fontSize: isMobile ? 10 : 12, fontWeight: 'bold', margin: 12 }, axisLine: { show: false }, axisTick: { show: false } },
                 series: [{ type: 'bar', data: seriesData, barWidth: isMobile ? 10 : 16, showBackground: true, backgroundStyle: { color: 'rgba(255,255,255,0.02)', borderRadius: [0, 4, 4, 0] }, label: { show: true, position: 'right', formatter: function(params) { let rate = params.data.rate; let sign = rate > 0 ? '+' : ''; let style = rate > 0 ? 'upRate' : (rate < 0 ? 'downRate' : 'flatRate'); return `{${style}|${sign}${rate.toFixed(2)}%}`; }, rich: { upRate: { color: '#ef4444', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 9 : 11, padding: [0, 0, 0, 8], textShadowBlur: 4, textShadowColor: 'rgba(239,68,68,0.3)' }, downRate: { color: '#22c55e', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 9 : 11, padding: [0, 0, 0, 8], textShadowBlur: 4, textShadowColor: 'rgba(34,197,94,0.3)' }, flatRate: { color: '#94a3b8', fontWeight: '900', fontFamily: 'monospace', fontSize: isMobile ? 9 : 11, padding: [0, 0, 0, 8] } } } }]
             });
             leaderboardFirstRender = false; 
         }
 
-        function renderKLine() {
-            let displayData = [...klineData]; if (liveCandle && liveCandle[0] > 0) displayData.push([liveCandle[0], liveCandle[1], liveCandle[2], liveCandle[3]]);
-            if (!displayData.length || !chartInstance) return;
-            const isMobile = window.innerWidth < 640; const viewWindowSize = isMobile ? 35 : 60; const total = displayData.length; const xAxisLength = Math.max(total, viewWindowSize);
-            let xAxisData = new Array(xAxisLength).fill(''); let seriesData = displayData.map(d => [d[0], d[1], d[2], d[3]]);
-            const validData = displayData.filter(d => d && d[0] > 0); let minP = Math.min(...validData.map(d => d[2])), maxP = Math.max(...validData.map(d => d[3]));
-            let pad = (maxP - minP) * 0.1 || 0.2; let currentClose = displayData[displayData.length - 1][1];
-            
-            let currentOption = chartInstance.getOption(); let isAtRight = true; let currentStartIdx = 0; let currentEndIdx = xAxisLength;
-            if (currentOption && currentOption.dataZoom && currentOption.dataZoom[0]) { let dz = currentOption.dataZoom[0]; currentStartIdx = Math.round(dz.startValue); currentEndIdx = Math.round(dz.endValue); isAtRight = dz.endValue >= (xAxisLength - 1.5); }
-            
-            let finalZoom = null;
-            if (needResetZoom) { let end = xAxisLength; let start = Math.max(0, end - viewWindowSize); finalZoom = [{ startValue: start, endValue: end }]; needResetZoom = false; } 
-            else if (isAtRight) { let viewSpan = currentEndIdx - currentStartIdx; let end = xAxisLength; let start = Math.max(0, end - viewSpan); finalZoom = [{ startValue: start, endValue: end }]; } 
-            else { finalZoom = [{ startValue: currentStartIdx, endValue: currentEndIdx }]; }
-            
-            let chartOpt = { animation: false, xAxis: { data: xAxisData, boundaryGap: true }, yAxis: { min: (minP - pad).toFixed(2), max: (maxP + pad).toFixed(2) }, series: [{ type: 'candlestick', data: seriesData, barCategoryGap: '28%', itemStyle: { color: '#ef4444', color0: '#00d8a6', borderColor: '#ef4444', borderColor0: '#00d8a6', borderWidth: 1.5 }, markLine: { symbol: ['none', 'none'], data: [{ yAxis: currentClose }], animation: false, lineStyle: { color: '#ef4444', type: 'dashed', width: 1.5, shadowBlur: 5, shadowColor: 'rgba(239,68,68,0.5)' }, label: { show: true, position: 'end', formatter: '¥{c}', backgroundColor: '#ef4444', color: '#fff', padding: [4, 6], borderRadius: 4, fontWeight: 'bold', fontFamily: 'monospace' } } }] };
-            if (finalZoom) chartOpt.dataZoom = finalZoom;
-            
-            chartInstance.setOption(chartOpt, { notMerge: false, lazyUpdate: true });
+        // 🚀 核心增加：专业级 MA 均线动态计算
+        function calculateMA(dayCount, data) {
+            var result = [];
+            for (var i = 0, len = data.length; i < len; i++) {
+                if (i < dayCount - 1) {
+                    result.push('-');
+                    continue;
+                }
+                var sum = 0;
+                for (var j = 0; j < dayCount; j++) {
+                    sum += data[i - j][1]; // 取出闭盘价计算
+                }
+                result.push(+(sum / dayCount).toFixed(2));
+            }
+            return result;
         }
 
+        function renderKLine() {
+            let displayData = [...klineData];
+            if (liveCandle && liveCandle[0] > 0) {
+                displayData.push([liveCandle[0], liveCandle[1], liveCandle[2], liveCandle[3]]);
+            }
+            if (!displayData.length || !chartInstance) return;
+
+            const isMobile = window.innerWidth < 640;
+            const viewWindowSize = isMobile ? 35 : 60; 
+            const total = displayData.length;
+            const xAxisLength = Math.max(total, viewWindowSize);
+
+            let xAxisData = new Array(xAxisLength).fill('');
+            let seriesData = displayData.map(d => [d[0], d[1], d[2], d[3]]);
+            
+            const validData = displayData.filter(d => d && d[0] > 0);
+            let minP = Math.min(...validData.map(d => d[2]));
+            let maxP = Math.max(...validData.map(d => d[3]));
+            
+            let pad = (maxP - minP) * 0.1;
+            if (pad === 0) pad = 0.2; 
+            
+            let currentClose = displayData[displayData.length - 1][1];
+
+            let currentOption = chartInstance.getOption();
+            let isAtRight = true;
+            let currentStartIdx = 0;
+            let currentEndIdx = xAxisLength;
+
+            if (currentOption && currentOption.dataZoom && currentOption.dataZoom[0]) {
+                let dz = currentOption.dataZoom[0];
+                if (dz.startValue !== undefined && dz.startValue !== null) { 
+                    currentStartIdx = Math.round(dz.startValue);
+                    currentEndIdx = Math.round(dz.endValue);
+                    isAtRight = dz.endValue >= (xAxisLength - 1.5); 
+                }
+            }
+
+            let finalZoom = [];
+            if (needResetZoom) {
+                let end = xAxisLength;
+                let start = Math.max(0, end - viewWindowSize);
+                finalZoom = [{ startValue: start, endValue: end }];
+                needResetZoom = false;
+            } 
+            else if (isAtRight) {
+                let viewSpan = currentEndIdx - currentStartIdx;
+                let end = xAxisLength;
+                let start = Math.max(0, end - viewSpan);
+                finalZoom = [{ startValue: start, endValue: end }];
+            } 
+            else {
+                finalZoom = [{ startValue: currentStartIdx, endValue: currentEndIdx }];
+            }
+
+            let option = {
+                animation: false,
+                xAxis: { data: xAxisData, boundaryGap: true },
+                yAxis: { min: (minP - pad).toFixed(2), max: (maxP + pad).toFixed(2) },
+                dataZoom: finalZoom,
+                series: [
+                    { 
+                        name: '指数',
+                        type: 'candlestick', 
+                        data: seriesData,
+                        barCategoryGap: '28%', 
+                        itemStyle: { 
+                            color: '#ff4d4f', color0: '#00d8a6', 
+                            borderColor: '#ff4d4f', borderColor0: '#00d8a6', 
+                            borderWidth: 1.5 
+                        },
+                        markLine: { 
+                            symbol: ['none', 'none'], data: [{ yAxis: currentClose }], animation: false,
+                            lineStyle: { color: '#ff4d4f', type: 'dashed', width: 1.5 },
+                            label: { show: true, position: 'end', formatter: '¥{c}', backgroundColor: '#ff4d4f', color: '#fff', padding: [3, 6], borderRadius: 4, fontWeight: 'bold' }
+                        }
+                    },
+                    {
+                        name: 'MA5',
+                        type: 'line',
+                        data: calculateMA(5, seriesData),
+                        smooth: true,
+                        showSymbol: false,
+                        lineStyle: { width: 1.5, color: '#F6DC7D' }
+                    },
+                    {
+                        name: 'MA10',
+                        type: 'line',
+                        data: calculateMA(10, seriesData),
+                        smooth: true,
+                        showSymbol: false,
+                        lineStyle: { width: 1.5, color: '#30D2F2' }
+                    }
+                ]
+            };
+            chartInstance.setOption(option, { notMerge: false, lazyUpdate: true });
+        }
+
+        // 🚀 核心优化：图表初始化加入 Legend 与多维 Tooltip 解析
         function initChart() {
-            const chartDom = document.getElementById('mainChart'); if (!chartDom) return;
-            chartInstance = echarts.init(chartDom); const isMobile = window.innerWidth < 640;
-            chartInstance.setOption({ 
-                animation: false, 
-                tooltip: { trigger: 'axis', axisPointer: { type: 'cross', crossStyle: { color: 'rgba(255,255,255,0.2)', type: 'dashed' } }, backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(59,130,246,0.5)', borderWidth: 1, padding: [8, 12], textStyle: { color: '#f8fafc', fontSize: 12 }, formatter: p => { if (!p || !p[0] || !p[0].value || !Array.isArray(p[0].value) || p[0].value.length < 5) { if (p && p[0] && typeof p[0].value === 'number') return `现价: ¥${p[0].value.toFixed(2)}`; return ''; } let d = p[0].value; let o = Number(d[1]) || 0; let c = Number(d[2]) || 0; let l = Number(d[3]) || 0; let h = Number(d[4]) || 0; let up = c >= o; return `<div class='p-1'><div class='font-bold text-white mb-2 border-b border-white/10 pb-2 text-sm'><span>详情</span><span class='float-right ${up?'text-[#ef4444]':'text-[#00d8a6]'}'>${up?'上涨':'下跌'}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>开盘<span class='font-mono'>¥${o.toFixed(2)}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>收盘<span class='font-bold font-mono text-white'>¥${c.toFixed(2)}</span></div><div class='flex justify-between gap-8 mb-1.5 text-xs text-slate-300'>最低<span class='font-mono'>¥${l.toFixed(2)}</span></div><div class='flex justify-between gap-8 text-xs text-slate-300'>最高<span class='font-mono'>¥${h.toFixed(2)}</span></div></div>`; } }, 
-                grid: { left: isMobile ? '2%' : '3%', right: isMobile ? 65 : '8%', bottom: '8%', top: '8%', containLabel: true }, 
-                xAxis: { type: 'category', data: [], axisLine: { show: false }, splitLine: { show: false } }, 
-                yAxis: { type: 'value', scale: true, splitLine: { show: true, lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'solid' } }, axisLabel: { color: '#64748b', fontSize: isMobile ? 9 : 11, fontFamily: 'monospace' } }, 
-                dataZoom: [ { type: 'inside', xAxisIndex: 0, filterMode: 'empty' } ], 
-                series: [{ type: 'candlestick', data: [] }] 
+            const chartDom = document.getElementById('mainChart');
+            if (!chartDom) return;
+            chartInstance = echarts.init(chartDom);
+            const isMobile = window.innerWidth < 640;
+            chartInstance.setOption({
+                animation: false,
+                legend: {
+                    show: true,
+                    data: ['指数', 'MA5', 'MA10'],
+                    textStyle: { color: '#94a3b8', fontSize: 10, fontFamily: 'monospace' },
+                    top: 0, left: 10, icon: 'circle', itemWidth: 8
+                },
+                tooltip: { 
+                    trigger: 'axis', axisPointer: { type: 'cross' }, 
+                    backgroundColor: 'rgba(18,22,27,0.98)', borderColor: '#3b82f6', textStyle: { color: '#fff', fontSize: 11 },
+                    formatter: p => {
+                        let kData = p.find(item => item.seriesName === '指数' || item.seriesType === 'candlestick');
+                        if (!kData && p.length > 0) kData = p[0]; 
+                        if (!kData || !kData.value) return '';
+
+                        let d = kData.value;
+                        if (!d || d[1] === '-' || isNaN(Number(d[1]))) return '';
+                        
+                        let o = Number(d[1]) || 0;
+                        let c = Number(d[2]) || 0;
+                        let l = Number(d[3]) || 0;
+                        let h = Number(d[4]) || 0;
+                        let up = c >= o;
+                        
+                        let ma5 = p.find(item => item.seriesName === 'MA5');
+                        let ma10 = p.find(item => item.seriesName === 'MA10');
+                        
+                        let maHtml = '';
+                        if(ma5 && ma5.value !== '-') maHtml += `<div class='flex justify-between gap-6 mb-1 text-slate-400'>MA5<span style='color:#F6DC7D' class='font-mono'>¥${ma5.value}</span></div>`;
+                        if(ma10 && ma10.value !== '-') maHtml += `<div class='flex justify-between gap-6 text-slate-400'>MA10<span style='color:#30D2F2' class='font-mono'>¥${ma10.value}</span></div>`;
+
+                        return `<div class='p-1'>
+                                    <div class='font-bold text-gray-400 mb-2 border-b border-white/10 flex justify-between gap-8 pb-1'>
+                                        <span>详情</span><span class='${up?'text-[#ff4d4f]':'text-[#00d8a6]'}'>${up?'上涨':'下跌'}</span>
+                                    </div>
+                                    <div class='flex justify-between gap-6 mb-1'>开盘<span class='font-mono'>¥${o.toFixed(2)}</span></div>
+                                    <div class='flex justify-between gap-6 mb-1'>收盘<span class='font-bold font-mono text-white'>¥${c.toFixed(2)}</span></div>
+                                    <div class='flex justify-between gap-6 mb-1'>最低<span class='font-mono'>¥${l.toFixed(2)}</span></div>
+                                    <div class='flex justify-between gap-6 mb-2'>最高<span class='font-mono'>¥${h.toFixed(2)}</span></div>
+                                    ${maHtml}
+                                </div>`;
+                    }
+                },
+                grid: { left: isMobile ? '1%' : '3%', right: isMobile ? '12%' : '8%', bottom: '8%', top: '10%', containLabel: true },
+                xAxis: { type: 'category', data: [], axisLine: { show: false }, splitLine: { show: false } },
+                yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.03)', type: 'dashed' } }, axisLabel: { color: '#4a5568', fontSize: isMobile ? 8 : 10 } },
+                dataZoom: [ 
+                    { type: 'inside', xAxisIndex: 0 } 
+                ],
+                series: [
+                    { name: '指数', type: 'candlestick', data: [] },
+                    { name: 'MA5', type: 'line', data: [] },
+                    { name: 'MA10', type: 'line', data: [] }
+                ]
             });
-            chartInstance.on('dataZoom', function (p) { if (p.batch || p.start != null) needResetZoom = false; });
             window.addEventListener('resize', () => { if (chartInstance) { chartInstance.resize(); renderKLine(); } if (leaderboardInstance) leaderboardInstance.resize(); });
         }
 
